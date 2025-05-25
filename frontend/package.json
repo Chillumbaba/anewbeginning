@@ -5,6 +5,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "npm install --legacy-peer-deps && react-scripts build",
+    "serve": "npm install -g serve && serve -s build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
