@@ -4,13 +4,21 @@ import cors from 'cors';
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Trust proxy - required for correct protocol detection behind Render's proxy
+app.set('trust proxy', true);
+
 // Debug logging middleware - log all requests
 app.use((req, res, next) => {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['host'] || 'unknown';
+    
     console.log(`\n[Request] ==================`);
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
     console.log(`Base URL: ${req.baseUrl}`);
     console.log(`Path: ${req.path}`);
-    console.log(`Full URL: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
+    console.log(`Protocol: ${protocol}`);
+    console.log(`Host: ${host}`);
+    console.log(`Full URL: ${protocol}://${host}${req.originalUrl}`);
     console.log('Headers:', JSON.stringify(req.headers, null, 2));
     console.log('Query:', req.query);
     console.log('Body:', req.body);
@@ -34,9 +42,32 @@ app.use(express.json());
 // Register routes
 console.log('[Setup] Registering routes...');
 
+// Test route to check URL handling
+app.get('/test', (req, res) => {
+    console.log('[Route] Test route accessed');
+    res.json({
+        message: 'Test endpoint',
+        url: req.url,
+        baseUrl: req.baseUrl,
+        originalUrl: req.originalUrl,
+        path: req.path,
+        protocol: req.protocol,
+        secure: req.secure,
+        headers: req.headers
+    });
+});
+
 // Health check route - register this first
 app.get('/api/health', (req, res) => {
     console.log('[Route] Health check route accessed');
+    console.log('Health check details:', {
+        path: req.path,
+        baseUrl: req.baseUrl,
+        originalUrl: req.originalUrl,
+        protocol: req.protocol,
+        secure: req.secure
+    });
+    
     res.setHeader('Content-Type', 'application/json');
     res.json({
         status: 'ok',
@@ -45,7 +76,9 @@ app.get('/api/health', (req, res) => {
         request: {
             path: req.path,
             baseUrl: req.baseUrl,
-            originalUrl: req.originalUrl
+            originalUrl: req.originalUrl,
+            protocol: req.protocol,
+            secure: req.secure
         }
     });
 });
@@ -58,17 +91,26 @@ app.get('/', (req, res) => {
         status: 'running',
         environment: process.env.NODE_ENV || 'development',
         endpoints: {
+            test: '/test',
             health: '/api/health'
         }
     });
 });
 
-// Log registered routes
-app._router.stack.forEach((r: any) => {
-    if (r.route && r.route.path) {
-        console.log('[Setup] Route registered:', r.route.path);
+// Log all registered routes
+console.log('\n[Setup] Registered Routes:');
+app._router.stack.forEach((middleware: any) => {
+    if (middleware.route) { // routes registered directly on the app
+        console.log(`[Route] ${Object.keys(middleware.route.methods).join(', ')} ${middleware.route.path}`);
+    } else if (middleware.name === 'router') { // router middleware
+        middleware.handle.stack.forEach((handler: any) => {
+            if (handler.route) {
+                console.log(`[Route] ${Object.keys(handler.route.methods).join(', ')} ${handler.route.path}`);
+            }
+        });
     }
 });
+console.log('');
 
 // 404 handler - register this last
 app.use((req, res) => {
@@ -76,7 +118,8 @@ app.use((req, res) => {
     res.status(404).json({
         error: 'Not Found',
         path: req.originalUrl,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        availableRoutes: ['/test', '/api/health', '/']
     });
 });
 
@@ -96,6 +139,7 @@ app.listen(port, () => {
     console.log('[Server] Environment:', process.env.NODE_ENV || 'development');
     console.log('[Server] Available routes:');
     console.log('- GET /');
+    console.log('- GET /test');
     console.log('- GET /api/health');
     console.log('\n[Server] Ready for requests!\n');
 }); 
