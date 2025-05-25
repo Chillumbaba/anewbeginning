@@ -39,8 +39,17 @@ console.log('[Setup] Configuring CORS:', corsOptions);
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Create API router
+// Create API router with debug logging
 const apiRouter = express.Router();
+
+// Debug middleware for API router
+apiRouter.use((req, res, next) => {
+    console.log(`[API Router] Processing request:`);
+    console.log(`- Original URL: ${req.originalUrl}`);
+    console.log(`- Base URL: ${req.baseUrl}`);
+    console.log(`- Path: ${req.path}`);
+    next();
+});
 
 // Health check route
 apiRouter.get('/health', (req, res) => {
@@ -68,10 +77,12 @@ apiRouter.get('/health', (req, res) => {
     });
 });
 
-// Mount API router
+// Mount API router and log the mounting
+console.log('[Setup] Mounting API router at /api');
 app.use('/api', apiRouter);
+console.log('[Setup] API router mounted');
 
-// Test route
+// Test route to check URL handling
 app.get('/test', (req, res) => {
     console.log('[Route] Test route accessed');
     res.json({
@@ -102,23 +113,30 @@ app.get('/', (req, res) => {
 
 // Log all registered routes
 console.log('\n[Setup] Registered Routes:');
-const printRoutes = (stack: any[], prefix = '') => {
-    stack.forEach(middleware => {
-        if (middleware.route) { // routes registered directly
-            const methods = Object.keys(middleware.route.methods).join(', ');
-            console.log(`[Route] ${methods} ${prefix}${middleware.route.path}`);
-        } else if (middleware.name === 'router') { // router middleware
-            console.log(`[Router] Mounted at ${prefix}`);
-            printRoutes(middleware.handle.stack, prefix + middleware.regexp.source.replace("^", "").replace("\\/?(?=\\/|$)", ""));
-        }
-    });
-};
-printRoutes(app._router.stack);
+console.log('[Setup] Main app routes:');
+app._router.stack.forEach((middleware: any, index: number) => {
+    if (middleware.route) { // routes registered directly on the app
+        console.log(`[${index}] ${Object.keys(middleware.route.methods).join(', ')} ${middleware.route.path}`);
+    } else if (middleware.name === 'router') { // router middleware
+        console.log(`[${index}] Router middleware mounted at: ${middleware.regexp}`);
+        middleware.handle.stack.forEach((handler: any, handlerIndex: number) => {
+            if (handler.route) {
+                console.log(`  [${handlerIndex}] ${Object.keys(handler.route.methods).join(', ')} ${handler.route.path}`);
+            }
+        });
+    } else {
+        console.log(`[${index}] Middleware: ${middleware.name}`);
+    }
+});
 console.log('');
 
 // 404 handler - register this last
 app.use((req, res) => {
     console.log(`[404] Route not found: ${req.method} ${req.originalUrl}`);
+    console.log('Available routes:', app._router.stack
+        .filter((r: any) => r.route || r.name === 'router')
+        .map((r: any) => r.route ? r.route.path : `[Router ${r.regexp}]`)
+    );
     res.status(404).json({
         error: 'Not Found',
         path: req.originalUrl,
