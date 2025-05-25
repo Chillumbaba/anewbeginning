@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
 # exit on error
 set -o errexit
+set -o pipefail
+set -o nounset
 
-# Build frontend
+echo "Node version: $(node -v)"
+echo "NPM version: $(npm -v)"
+
+echo "Installing dependencies..."
+npm ci || npm install
+
+echo "Building client..."
 cd client
-npm install
-npm run build
+npm ci || npm install
+CI=false npm run build
 
-# Move frontend build to server's public directory
+echo "Setting up server..."
 cd ..
 rm -rf server/public
 mkdir -p server/public
-mv client/build/* server/public/
+cp -r client/build/* server/public/
 
-# Build backend
+echo "Building server..."
 cd server
-npm install
-npm run build 
+npm ci || npm install
+npm run build
+
+echo "Build completed successfully!" 
