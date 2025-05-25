@@ -6,19 +6,25 @@ const port = process.env.PORT || 3001;
 
 // Debug logging middleware - log all requests
 app.use((req, res, next) => {
+    console.log(`\n[Request] ==================`);
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-    console.log('Headers:', req.headers);
+    console.log(`Base URL: ${req.baseUrl}`);
+    console.log(`Path: ${req.path}`);
+    console.log(`Full URL: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
     console.log('Query:', req.query);
     console.log('Body:', req.body);
+    console.log(`[Request] ==================\n`);
     next();
 });
 
 // CORS configuration
 const corsOptions = {
-    origin: '*',  // Allow all origins temporarily for debugging
+    origin: '*',  // Allow all origins for debugging
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: true,
+    maxAge: 86400  // Cache preflight requests for 24 hours
 };
 
 console.log('[Setup] Configuring CORS:', corsOptions);
@@ -31,10 +37,16 @@ console.log('[Setup] Registering routes...');
 // Health check route - register this first
 app.get('/api/health', (req, res) => {
     console.log('[Route] Health check route accessed');
+    res.setHeader('Content-Type', 'application/json');
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        request: {
+            path: req.path,
+            baseUrl: req.baseUrl,
+            originalUrl: req.originalUrl
+        }
     });
 });
 
