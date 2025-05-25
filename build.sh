@@ -1,18 +1,16 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # exit on error
-set -o errexit
-set -o pipefail
-set -o nounset
+set -e
 
 echo "Node version: $(node -v)"
 echo "NPM version: $(npm -v)"
 
 echo "Installing dependencies..."
-npm ci || npm install
+npm install
 
 echo "Building client..."
 cd client
-npm ci || npm install
+npm install
 CI=false npm run build
 
 echo "Setting up server..."
@@ -23,7 +21,7 @@ cp -r client/build/* server/public/
 
 echo "Building server..."
 cd server
-npm ci || npm install
+npm install
 npm run build
 
 echo "Build completed successfully!" 
