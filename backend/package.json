@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npm ci && npm i @types/express @types/cors @types/mongoose @types/node && tsc",
+    "prebuild": "rm -rf dist",
+    "build": "npm ci && tsc --project tsconfig.json",
     "start": "node dist/index.js",
     "start:dev": "ts-node-dev src/index.ts"
   },
