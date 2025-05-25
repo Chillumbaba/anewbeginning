@@ -44,10 +44,13 @@ const apiRouter = express.Router();
 
 // Debug middleware for API router
 apiRouter.use((req, res, next) => {
+    console.log(`\n[API Router] ==================`);
     console.log(`[API Router] Processing request:`);
     console.log(`- Original URL: ${req.originalUrl}`);
     console.log(`- Base URL: ${req.baseUrl}`);
     console.log(`- Path: ${req.path}`);
+    console.log(`- Method: ${req.method}`);
+    console.log(`[API Router] ==================\n`);
     next();
 });
 
@@ -132,14 +135,34 @@ console.log('');
 
 // 404 handler - register this last
 app.use((req, res) => {
+    console.log(`\n[404] ==================`);
     console.log(`[404] Route not found: ${req.method} ${req.originalUrl}`);
-    console.log('Available routes:', app._router.stack
-        .filter((r: any) => r.route || r.name === 'router')
-        .map((r: any) => r.route ? r.route.path : `[Router ${r.regexp}]`)
-    );
+    console.log(`[404] Base URL: ${req.baseUrl}`);
+    console.log(`[404] Path: ${req.path}`);
+    
+    // Log registered routes
+    console.log('[404] Available routes:');
+    app._router.stack.forEach((layer: any, index: number) => {
+        if (layer.route) {
+            console.log(`  [${index}] ${Object.keys(layer.route.methods).join(', ')} ${layer.route.path}`);
+        } else if (layer.name === 'router') {
+            console.log(`  [${index}] Router at ${layer.regexp}:`);
+            layer.handle.stack.forEach((routerLayer: any, routerIndex: number) => {
+                if (routerLayer.route) {
+                    const fullPath = (layer.regexp.toString().replace('/^\\', '').replace('\\/?(?=\\/|$)/i', '') + routerLayer.route.path).replace('//', '/');
+                    console.log(`    [${routerIndex}] ${Object.keys(routerLayer.route.methods).join(', ')} ${fullPath}`);
+                }
+            });
+        }
+    });
+    console.log('[404] ==================\n');
+
     res.status(404).json({
         error: 'Not Found',
         path: req.originalUrl,
+        baseUrl: req.baseUrl,
+        routePath: req.path,
+        method: req.method,
         timestamp: new Date().toISOString(),
         availableRoutes: ['/test', '/api/health', '/']
     });
