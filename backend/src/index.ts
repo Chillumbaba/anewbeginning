@@ -39,8 +39,23 @@ console.log('[Setup] Configuring CORS:', corsOptions);
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Create API router
+const apiRouter = express.Router();
+
+// API router debug middleware
+apiRouter.use((req, res, next) => {
+    console.log(`\n[API Router] ==================`);
+    console.log(`[API Router] Processing request:`);
+    console.log(`- Original URL: ${req.originalUrl}`);
+    console.log(`- Base URL: ${req.baseUrl}`);
+    console.log(`- Path: ${req.path}`);
+    console.log(`- Method: ${req.method}`);
+    console.log(`[API Router] ==================\n`);
+    next();
+});
+
 // Health check route
-app.get('/api/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
     console.log('[Route] Health check route accessed');
     console.log('Health check details:', {
         path: req.path,
@@ -65,11 +80,31 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Test route to check URL handling
-app.get('/test', (req, res) => {
-    console.log('[Route] Test route accessed');
+// API test route
+apiRouter.get('/test', (req, res) => {
+    console.log('[Route] API test route accessed');
     res.json({
-        message: 'Test endpoint',
+        message: 'API test endpoint',
+        url: req.url,
+        baseUrl: req.baseUrl,
+        originalUrl: req.originalUrl,
+        path: req.path,
+        protocol: req.protocol,
+        secure: req.secure,
+        headers: req.headers
+    });
+});
+
+// Mount API router
+console.log('[Setup] Mounting API router at /api');
+app.use('/api', apiRouter);
+console.log('[Setup] API router mounted');
+
+// Root test route
+app.get('/test', (req, res) => {
+    console.log('[Route] Root test route accessed');
+    res.json({
+        message: 'Root test endpoint',
         url: req.url,
         baseUrl: req.baseUrl,
         originalUrl: req.originalUrl,
@@ -89,6 +124,7 @@ app.get('/', (req, res) => {
         environment: process.env.NODE_ENV || 'development',
         endpoints: {
             test: '/test',
+            'api-test': '/api/test',
             health: '/api/health'
         }
     });
@@ -100,6 +136,13 @@ app._router.stack.forEach((middleware: any, index: number) => {
     if (middleware.route) {
         const methods = Object.keys(middleware.route.methods).join(', ');
         console.log(`[${index}] ${methods.toUpperCase()} ${middleware.route.path}`);
+    } else if (middleware.name === 'router') {
+        console.log(`[${index}] Router middleware mounted at: ${middleware.regexp}`);
+        middleware.handle.stack.forEach((handler: any, handlerIndex: number) => {
+            if (handler.route) {
+                console.log(`  [${handlerIndex}] ${Object.keys(handler.route.methods).join(', ')} ${handler.route.path}`);
+            }
+        });
     } else {
         console.log(`[${index}] Middleware: ${middleware.name || '<anonymous>'}`);
     }
@@ -115,6 +158,21 @@ app.use((req, res) => {
     console.log(`[404] Method: ${req.method}`);
     console.log(`[404] Protocol: ${req.protocol}`);
     console.log(`[404] Headers:`, JSON.stringify(req.headers, null, 2));
+    
+    // Log registered routes
+    console.log('[404] Available routes:');
+    app._router.stack.forEach((layer: any, index: number) => {
+        if (layer.route) {
+            console.log(`  [${index}] ${Object.keys(layer.route.methods).join(', ')} ${layer.route.path}`);
+        } else if (layer.name === 'router') {
+            console.log(`  [${index}] Router at ${layer.regexp}:`);
+            layer.handle.stack.forEach((routerLayer: any, routerIndex: number) => {
+                if (routerLayer.route) {
+                    console.log(`    [${routerIndex}] ${Object.keys(routerLayer.route.methods).join(', ')} ${routerLayer.route.path}`);
+                }
+            });
+        }
+    });
     console.log('[404] ==================\n');
 
     res.status(404).json({
@@ -124,7 +182,7 @@ app.use((req, res) => {
         routePath: req.path,
         method: req.method,
         timestamp: new Date().toISOString(),
-        availableRoutes: ['/test', '/api/health', '/']
+        availableRoutes: ['/test', '/api/test', '/api/health', '/']
     });
 });
 
@@ -145,6 +203,7 @@ app.listen(port, () => {
     console.log('[Server] Available routes:');
     console.log('- GET /');
     console.log('- GET /test');
+    console.log('- GET /api/test');
     console.log('- GET /api/health');
     console.log('\n[Server] Ready for requests!\n');
 }); 
