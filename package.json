@@ -5,13 +5,15 @@
   "private": true,
   "scripts": {
     "install-all": "cd client && npm install --legacy-peer-deps && cd ../server && npm install",
-    "build-client": "cd client && npm run build",
+    "build-client": "cd client && npm run build-prod",
     "build-server": "cd server && npm run build",
-    "setup-public": "cd server && mkdir -p public && cp -r ../client/build/* public/",
+    "setup-public": "cd server && (if not exist public mkdir public) && xcopy /E /I /Y ..\\client\\build\\* public\\",
     "build": "npm run install-all && npm run build-client && npm run build-server && npm run setup-public",
-    "start": "cd server && npm start"
+    "start": "cd server && npm start",
+    "postinstall": "npm run build"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
   }
 } 
