@@ -4,16 +4,13 @@
   "description": "A full-stack web application with React frontend and Node.js backend",
   "private": true,
   "scripts": {
-    "install-all": "cd client && npm install --legacy-peer-deps && cd ../server && npm install",
-    "build-client": "cd client && npm run build-prod",
-    "build-server": "cd server && npm run build",
-    "setup-public": "cd server && (if not exist public mkdir public) && xcopy /E /I /Y ..\\client\\build\\* public\\",
-    "build": "npm run install-all && npm run build-client && npm run build-server && npm run setup-public",
     "start": "cd server && npm start",
-    "postinstall": "npm run build"
+    "build": "npm run build-client && npm run build-server && npm run copy-client",
+    "build-client": "cd client && npm install --legacy-peer-deps && npm run build",
+    "build-server": "cd server && npm install && npm run build",
+    "copy-client": "cd server && (if not exist public mkdir public) && xcopy /E /I /Y ..\\client\\build\\* public\\"
   },
   "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.0.0"
+    "node": ">=14.0.0"
   }
 } 
