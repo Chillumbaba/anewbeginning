@@ -4,7 +4,11 @@
   "description": "A full-stack web application with React frontend and Node.js backend",
   "private": true,
   "scripts": {
-    "build": "bash render-build.sh",
+    "install-all": "cd client && npm install --legacy-peer-deps && cd ../server && npm install",
+    "build-client": "cd client && npm run build",
+    "build-server": "cd server && npm run build",
+    "setup-public": "cd server && mkdir -p public && cp -r ../client/build/* public/",
+    "build": "npm run install-all && npm run build-client && npm run build-server && npm run setup-public",
     "start": "cd server && npm start"
   },
   "engines": {
