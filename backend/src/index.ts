@@ -1,56 +1,46 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3001;
 
 // Debug logging middleware
-app.use((req: Request, res: Response, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
   next();
 });
 
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? 'https://anewbeginning-frontend.onrender.com'
+    ? process.env.FRONTEND_URL || 'https://anewbeginning-frontend.onrender.com'
     : 'http://localhost:3000'
 }));
 
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/anewbeginning')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err: Error) => console.error('MongoDB connection error:', err));
-
 // Root route
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (req, res) => {
   console.log('Root route accessed');
   res.json({
     message: 'A New Beginning API',
     status: 'running',
     endpoints: {
-      health: '/api/health',
-      // Add other endpoints here as we create them
+      health: '/api/health'
     }
   });
 });
 
 // Health check route
-app.get('/api/health', (req: Request, res: Response) => {
+app.get('/api/health', (req, res) => {
   console.log('Health check route accessed');
   res.json({ status: 'ok' });
 });
 
 // 404 handler
-app.use((req: Request, res: Response) => {
-  console.log(`404 - Route not found: ${req.method} ${req.path}`);
-  res.status(404).json({ error: 'Not Found', path: req.path });
+app.use((req, res) => {
+  console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ error: 'Not Found', path: req.originalUrl });
 });
 
 app.listen(port, () => {
