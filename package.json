@@ -4,7 +4,12 @@
   "description": "A full-stack web application with React frontend and Node.js backend",
   "private": true,
   "scripts": {
-    "build": "cd client && npm install && npm run build && cd ../server && npm install && npm run build && mkdir -p public && cp -r ../client/build/* public/",
+    "install-client": "cd client && npm install",
+    "install-server": "cd server && npm install",
+    "build-client": "cd client && npm run build",
+    "build-server": "cd server && npm run build",
+    "copy-client": "cd server && mkdir -p public && cp -r ../client/build/* public/",
+    "build": "npm run install-client && npm run build-client && npm run install-server && npm run build-server && npm run copy-client",
     "start": "cd server && npm start"
   },
   "engines": {
