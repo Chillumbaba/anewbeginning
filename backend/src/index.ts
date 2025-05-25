@@ -14,7 +14,7 @@ app.use((req, res, next) => {
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://anewbeginning-frontend.onrender.com']
+    ? ['https://anewbeginning-frontend.onrender.com', 'https://anewbeginning.onrender.com']
     : ['http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
