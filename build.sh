@@ -2,12 +2,6 @@
 # exit on error
 set -e
 
-echo "Node version: $(node -v)"
-echo "NPM version: $(npm -v)"
-
-echo "Installing dependencies..."
-npm install
-
 echo "Building client..."
 cd client
 npm install

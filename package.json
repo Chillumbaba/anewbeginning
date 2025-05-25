@@ -8,13 +8,9 @@
     "server"
   ],
   "scripts": {
-    "postinstall": "cd client && npm install && cd ../server && npm install",
-    "build": "cd client && npm run build && cd ../server && npm run build",
+    "build": "cd client && npm install && npm run build && cd ../server && npm install && npm run build",
     "start": "cd server && npm start",
-    "dev": "concurrently \"cd client && npm start\" \"cd server && npm run dev\"",
-    "start:client": "cd client && npm start",
-    "start:server": "cd server && npm start",
-    "install:all": "npm install && cd client && npm install && cd ../server && npm install"
+    "dev": "concurrently \"cd client && npm start\" \"cd server && npm run dev\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
