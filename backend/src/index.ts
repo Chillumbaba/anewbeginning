@@ -22,6 +22,18 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/anewbegin
   .then(() => console.log('Connected to MongoDB'))
   .catch((err: Error) => console.error('MongoDB connection error:', err));
 
+// Root route
+app.get('/', (req: Request, res: Response) => {
+  res.json({
+    message: 'A New Beginning API',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      // Add other endpoints here as we create them
+    }
+  });
+});
+
 // Basic health check route
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
