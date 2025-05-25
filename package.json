@@ -4,7 +4,7 @@
   "description": "A full-stack web application with React frontend and Node.js backend",
   "private": true,
   "scripts": {
-    "build": "node build.js",
+    "build": "cd client && npm install && npm run build && cd ../server && npm install && npm run build && mkdir -p public && cp -r ../client/build/* public/",
     "start": "cd server && npm start"
   },
   "engines": {
