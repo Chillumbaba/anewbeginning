@@ -1,55 +1,94 @@
 # A New Beginning
 
-A simple web application that allows users to save text entries to a MongoDB database. Built with React frontend and Node.js backend.
+A simple web application that allows users to save text entries to a MongoDB database. Built with React TypeScript frontend and Node.js TypeScript backend.
 
 ## Project Structure
-- `client/` - React frontend application
-- `server/` - Node.js backend server
+```
+your-repo/
++-- frontend/           # React TypeScript frontend
+¦   +-- package.json   # Frontend dependencies + scripts
+¦   +-- tsconfig.json  # Frontend TS config
+¦   +-- public/        # Static files
+¦   +-- src/           # Source code
++-- backend/           # Node.js TypeScript backend
+¦   +-- package.json   # Backend dependencies + scripts
+¦   +-- tsconfig.json  # Backend TS config
+¦   +-- src/           # Source code
++-- .gitignore
++-- README.md
+```
 
 ## Local Development Setup
 
-1. Install dependencies:
+1. Install dependencies for both frontend and backend:
 ```bash
-npm run install:all
+# Install frontend dependencies
+cd frontend && npm install
+cd ..
+
+# Install backend dependencies
+cd backend && npm install
 ```
 
-2. Create a `.env` file in the server directory with your environment variables:
+2. Create a `.env` file in the backend directory:
 ```
 MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-PORT=5000
+PORT=3001
+NODE_ENV=development
 ```
 
 3. Start the development servers:
+
+In one terminal:
 ```bash
-npm start
+cd backend && npm run start:dev
+```
+
+In another terminal:
+```bash
+cd frontend && npm start
 ```
 
 ## Deployment on Render
 
-### Backend Service
-1. Create a new Web Service on Render
+### Backend Service (anewbeginning-backend)
+1. Service Name: anewbeginning-backend
 2. Connect to your GitHub repository
 3. Use the following settings:
-   - Build Command: `./build.sh`
-   - Start Command: `cd server && npm start`
+   - Root Directory: `backend`
+   - Build Command: `npm install && npm run build`
+   - Start Command: `node dist/index.js`
    - Environment Variables:
      - `MONGODB_URI`: Your MongoDB Atlas connection string
-     - `JWT_SECRET`: Your JWT secret
      - `NODE_ENV`: production
-     - `PORT`: 5000
+     - `PORT`: 10000
 
-### Frontend
-The frontend will be built and served by the backend service. No separate frontend service is needed.
+### Frontend Service (anewbeginning-frontend)
+1. Service Name: anewbeginning-frontend
+2. Connect to your GitHub repository
+3. Use the following settings:
+   - Root Directory: `frontend`
+   - Build Command: `npm install && npm run build`
+   - Start Command: `serve -s build`
+   - Environment Variables:
+     - `REACT_APP_API_URL`: https://anewbeginning-backend.onrender.com
 
 ## Environment Variables
-The following environment variables are required:
 
-### Server
+### Backend
 - `MONGODB_URI`: MongoDB connection string
-- `JWT_SECRET`: Secret key for JWT authentication
-- `PORT`: Server port (default: 5000)
+- `PORT`: Server port (default: 3001)
 - `NODE_ENV`: Set to 'production' in production environment
 
-### Client (Production)
-The frontend will automatically use the correct API URL based on the environment. 
+### Frontend
+- `REACT_APP_API_URL`: https://anewbeginning-backend.onrender.com (in production)
+
+## Development Notes
+- Frontend runs on port 3000 by default
+- Backend runs on port 3001 by default
+- Frontend has proxy configuration to backend for development
+- CORS is configured for both development and production
+- TypeScript is configured for both frontend and backend
+- Production URLs:
+  - Frontend: https://anewbeginning-frontend.onrender.com
+  - Backend: https://anewbeginning-backend.onrender.com 

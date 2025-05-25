@@ -1,23 +1,16 @@
-# Dependencies
-node_modules/
-/.pnp
-.pnp.js
+# Frontend
+frontend/node_modules
+frontend/.env
+frontend/build
+frontend/coverage
+frontend/.DS_Store
 
-# Production
-/client/build
-/server/dist
-
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Backend
+backend/node_modules
+backend/dist
+backend/.env
+backend/coverage
+backend/.DS_Store
 
 # IDE
 .idea/
@@ -25,6 +18,13 @@ yarn-error.log*
 *.swp
 *.swo
 
-# OS
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System Files
 .DS_Store
 Thumbs.db 
+node_modules
