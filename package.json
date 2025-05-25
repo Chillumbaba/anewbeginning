@@ -4,11 +4,8 @@
   "description": "A full-stack web application with React frontend and Node.js backend",
   "private": true,
   "scripts": {
-    "start": "cd server && npm start",
-    "build": "npm run build-client && npm run build-server && npm run copy-client",
-    "build-client": "cd client && npm install --legacy-peer-deps && npm run build",
-    "build-server": "cd server && npm install && npm run build",
-    "copy-client": "cd server && (if not exist public mkdir public) && xcopy /E /I /Y ..\\client\\build\\* public\\"
+    "start": "cd server && node dist/index.js",
+    "build": "cd client && npm install && npm run build && cd ../server && npm install && npm run build && mkdir -p public && cp -r ../client/build/* public/"
   },
   "engines": {
     "node": ">=14.0.0"
