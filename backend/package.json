@@ -5,6 +5,7 @@
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "npm ci && tsc --project tsconfig.json",
+    "postbuild": "ls -la dist && cat dist/index.js",
     "start": "node dist/index.js",
     "start:dev": "ts-node-dev src/index.ts"
   },

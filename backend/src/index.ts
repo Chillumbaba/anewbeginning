@@ -8,6 +8,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Debug logging middleware
+app.use((req: Request, res: Response, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
@@ -24,6 +30,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/anewbegin
 
 // Root route
 app.get('/', (req: Request, res: Response) => {
+  console.log('Root route accessed');
   res.json({
     message: 'A New Beginning API',
     status: 'running',
@@ -34,13 +41,21 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-// Basic health check route
+// Health check route
 app.get('/api/health', (req: Request, res: Response) => {
+  console.log('Health check route accessed');
   res.json({ status: 'ok' });
 });
 
-// Your routes will go here
+// 404 handler
+app.use((req: Request, res: Response) => {
+  console.log(`404 - Route not found: ${req.method} ${req.path}`);
+  res.status(404).json({ error: 'Not Found', path: req.path });
+});
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  console.log('Available routes:');
+  console.log('- GET /');
+  console.log('- GET /api/health');
 }); 
