@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/index.js",
-    "build": "cd ../client && npm install && npm run build && cd ../server && npm install && tsc -p tsconfig.json && mkdir -p public && cp -r ../client/build/* public/",
+    "build": "npm install && tsc -p tsconfig.json && cd ../client && npm install && npm run build && cd ../server && mkdir -p public && cp -r ../client/build/* public/",
     "dev": "nodemon --exec ts-node src/index.ts"
   },
   "keywords": [],
