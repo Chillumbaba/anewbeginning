@@ -4,6 +4,7 @@
   "description": "A full-stack web application with React frontend and Node.js backend",
   "private": true,
   "scripts": {
+    "build": "bash render-build.sh",
     "start": "cd server && npm start"
   },
   "engines": {
