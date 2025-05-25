@@ -39,26 +39,11 @@ console.log('[Setup] Configuring CORS:', corsOptions);
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Register routes
-console.log('[Setup] Registering routes...');
+// Create API router
+const apiRouter = express.Router();
 
-// Test route to check URL handling
-app.get('/test', (req, res) => {
-    console.log('[Route] Test route accessed');
-    res.json({
-        message: 'Test endpoint',
-        url: req.url,
-        baseUrl: req.baseUrl,
-        originalUrl: req.originalUrl,
-        path: req.path,
-        protocol: req.protocol,
-        secure: req.secure,
-        headers: req.headers
-    });
-});
-
-// Health check route - register this first
-app.get('/api/health', (req, res) => {
+// Health check route
+apiRouter.get('/health', (req, res) => {
     console.log('[Route] Health check route accessed');
     console.log('Health check details:', {
         path: req.path,
@@ -83,6 +68,24 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Mount API router
+app.use('/api', apiRouter);
+
+// Test route
+app.get('/test', (req, res) => {
+    console.log('[Route] Test route accessed');
+    res.json({
+        message: 'Test endpoint',
+        url: req.url,
+        baseUrl: req.baseUrl,
+        originalUrl: req.originalUrl,
+        path: req.path,
+        protocol: req.protocol,
+        secure: req.secure,
+        headers: req.headers
+    });
+});
+
 // Root route
 app.get('/', (req, res) => {
     console.log('[Route] Root route accessed');
@@ -99,17 +102,18 @@ app.get('/', (req, res) => {
 
 // Log all registered routes
 console.log('\n[Setup] Registered Routes:');
-app._router.stack.forEach((middleware: any) => {
-    if (middleware.route) { // routes registered directly on the app
-        console.log(`[Route] ${Object.keys(middleware.route.methods).join(', ')} ${middleware.route.path}`);
-    } else if (middleware.name === 'router') { // router middleware
-        middleware.handle.stack.forEach((handler: any) => {
-            if (handler.route) {
-                console.log(`[Route] ${Object.keys(handler.route.methods).join(', ')} ${handler.route.path}`);
-            }
-        });
-    }
-});
+const printRoutes = (stack: any[], prefix = '') => {
+    stack.forEach(middleware => {
+        if (middleware.route) { // routes registered directly
+            const methods = Object.keys(middleware.route.methods).join(', ');
+            console.log(`[Route] ${methods} ${prefix}${middleware.route.path}`);
+        } else if (middleware.name === 'router') { // router middleware
+            console.log(`[Router] Mounted at ${prefix}`);
+            printRoutes(middleware.handle.stack, prefix + middleware.regexp.source.replace("^", "").replace("\\/?(?=\\/|$)", ""));
+        }
+    });
+};
+printRoutes(app._router.stack);
 console.log('');
 
 // 404 handler - register this last
