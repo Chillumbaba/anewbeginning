@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Grid, Paper, Typography } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import axios from 'axios';
+import api from '../services/api';
 
 interface GridCell {
   date: string;
@@ -34,7 +34,7 @@ const ProgressGrid: React.FC = () => {
   const fetchGridData = async () => {
     try {
       console.log('Fetching grid data...');
-      const response = await axios.get('http://localhost:3001/api/grid-data');
+      const response = await api.get('/api/grid-data');
       console.log('Grid data received:', response.data);
       setGridData(response.data);
     } catch (error) {
@@ -64,7 +64,7 @@ const ProgressGrid: React.FC = () => {
 
       console.log(`Updating cell (${date}, ${rule}) from ${currentStatus} to ${newStatus}`);
       
-      const response = await axios.post('http://localhost:3001/api/grid-data', {
+      const response = await api.post('/api/grid-data', {
         date,
         rule,
         status: newStatus

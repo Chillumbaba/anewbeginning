@@ -20,14 +20,19 @@ mongoose.connect(MONGODB_URI)
   process.exit(1);
 });
 
-// Root route
-app.get('/', (_req: Request, res: Response) => {
+// API Routes
+app.use('/api', gridRoutes);
+app.use('/api', textRoutes);
+
+// Root API route
+app.get('/api', (_req: Request, res: Response) => {
   res.json({ message: 'Welcome to the Task Tracker API' });
 });
 
-// Routes
-app.use('/api', gridRoutes);
-app.use('/api', textRoutes);
+// Root route redirect
+app.get('/', (_req: Request, res: Response) => {
+  res.redirect('/api');
+});
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 interface Text {
   _id: string;
@@ -18,7 +18,7 @@ const Home: React.FC = () => {
 
   const fetchTexts = async () => {
     try {
-      const response = await axios.get('/api/texts');
+      const response = await api.get('/api/texts');
       setTexts(response.data);
     } catch (err) {
       setError('Failed to load texts');
@@ -30,7 +30,7 @@ const Home: React.FC = () => {
     if (!inputText.trim()) return;
 
     try {
-      await axios.post('/api/texts', { content: inputText });
+      await api.post('/api/texts', { content: inputText });
       setInputText('');
       fetchTexts();
     } catch (err) {
