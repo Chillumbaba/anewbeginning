@@ -10,8 +10,17 @@ interface GridCell {
   status: 'blank' | 'tick' | 'cross';
 }
 
+interface Rule {
+  _id: string;
+  number: number;
+  name: string;
+  description?: string;
+  active: boolean;
+}
+
 const ProgressGrid: React.FC = () => {
   const [gridData, setGridData] = useState<GridCell[]>([]);
+  const [rules, setRules] = useState<Rule[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const getDates = () => {
@@ -25,10 +34,10 @@ const ProgressGrid: React.FC = () => {
   };
 
   const dates = getDates();
-  const rules = [1, 2, 3, 4];
 
   useEffect(() => {
     fetchGridData();
+    fetchRules();
   }, []);
 
   const fetchGridData = async () => {
@@ -43,9 +52,19 @@ const ProgressGrid: React.FC = () => {
     }
   };
 
+  const fetchRules = async () => {
+    try {
+      const response = await api.get('/api/rules');
+      const activeRules = response.data.filter((rule: Rule) => rule.active);
+      setRules(activeRules);
+    } catch (error) {
+      console.error('Error fetching rules:', error);
+      setError('Failed to load rules');
+    }
+  };
+
   const getCellStatus = (date: string, rule: number): 'blank' | 'tick' | 'cross' => {
     const cell = gridData.find(item => item.date === date && item.rule === rule);
-    console.log(`Cell status for date ${date}, rule ${rule}:`, cell?.status || 'blank');
     return cell ? cell.status : 'blank';
   };
 
@@ -111,8 +130,10 @@ const ProgressGrid: React.FC = () => {
       <Grid container spacing={1}>
         <Grid item xs={2}></Grid>
         {rules.map(rule => (
-          <Grid item xs={2.5} key={rule}>
-            <Typography variant="subtitle1" align="center">Rule {rule}</Typography>
+          <Grid item xs={2.5} key={rule.number}>
+            <Typography variant="subtitle1" align="center" title={rule.description || ''}>
+              {rule.name}
+            </Typography>
           </Grid>
         ))}
 
@@ -124,8 +145,8 @@ const ProgressGrid: React.FC = () => {
               </Typography>
             </Grid>
             {rules.map(rule => (
-              <Grid item xs={2.5} key={`${date}-${rule}`}>
-                {renderCell(date, rule)}
+              <Grid item xs={2.5} key={`${date}-${rule.number}`}>
+                {renderCell(date, rule.number)}
               </Grid>
             ))}
           </React.Fragment>

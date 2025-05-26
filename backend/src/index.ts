@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import gridRoutes from './routes/gridRoutes';
 import textRoutes from './routes/textRoutes';
+import ruleRoutes from './routes/ruleRoutes';
+import { Rule } from './models/Rule';
 
 const app = express();
 
@@ -14,7 +16,11 @@ app.use(express.json());
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tasktracker';
 
 mongoose.connect(MONGODB_URI)
-.then(() => console.log('Successfully connected to MongoDB Atlas'))
+.then(async () => {
+  console.log('Successfully connected to MongoDB Atlas');
+  // Initialize default rules
+  await Rule.createDefaultRules();
+})
 .catch(err => {
   console.error('MongoDB Atlas connection error:', err);
   process.exit(1);
@@ -23,6 +29,7 @@ mongoose.connect(MONGODB_URI)
 // API Routes
 app.use('/api', gridRoutes);
 app.use('/api', textRoutes);
+app.use('/api', ruleRoutes);
 
 // Root API route
 app.get('/api', (_req: Request, res: Response) => {

@@ -15,6 +15,9 @@ const Navigation: React.FC = () => {
         <Button color="inherit" component={Link} to="/grid">
           Progress Grid
         </Button>
+        <Button color="inherit" component={Link} to="/rules">
+          Rules
+        </Button>
       </Toolbar>
     </AppBar>
   );
