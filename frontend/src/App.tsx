@@ -8,6 +8,7 @@ interface Text {
 
 // API URL based on environment
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+console.log('Using API URL:', API_URL); // Add logging to help debug
 
 function App() {
   const [inputText, setInputText] = useState('');
