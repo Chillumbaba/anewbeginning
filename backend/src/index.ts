@@ -53,13 +53,14 @@ apiRouter.use((req, res, next) => {
     console.log(`- Route Stack:`, apiRouter.stack.map((layer: any) => ({
         name: layer.name,
         path: layer.route?.path,
-        methods: layer.route?.methods
+        methods: layer.route?.methods,
+        regexp: layer.regexp?.toString()
     })));
     console.log(`[API Router] ==================\n`);
     next();
 });
 
-// API test route - register first to match route registration order
+// API test route
 apiRouter.get('/test', (req, res) => {
     console.log('[Route] API test route accessed');
     res.json({
@@ -74,45 +75,53 @@ apiRouter.get('/test', (req, res) => {
     });
 });
 
-// Health check route - register second
+// Health check route - match test route structure exactly
 apiRouter.get('/health', (req, res) => {
-    console.log('[Route] Health check route accessed');
-    console.log('Health check details:', {
-        path: req.path,
+    console.log('[Route] API health route accessed');
+    res.json({
+        message: 'API health endpoint',
+        url: req.url,
         baseUrl: req.baseUrl,
         originalUrl: req.originalUrl,
+        path: req.path,
         protocol: req.protocol,
-        secure: req.secure
-    });
-    
-    res.setHeader('Content-Type', 'application/json');
-    res.json({
+        secure: req.secure,
+        headers: req.headers,
         status: 'ok',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
-        request: {
-            path: req.path,
-            baseUrl: req.baseUrl,
-            originalUrl: req.originalUrl,
-            protocol: req.protocol,
-            secure: req.secure
-        }
+        environment: process.env.NODE_ENV || 'development'
     });
 });
 
-// Mount API router and verify routes
-console.log('[Setup] API Routes before mounting:');
-apiRouter.stack.forEach((layer: any, index: number) => {
-    console.log(`[${index}] ${layer.name} ${layer.regexp} ${layer.route?.path}`);
+// Debug middleware to log all route matches
+apiRouter.use((req, res, next) => {
+    console.log(`\n[API Route Debug] ==================`);
+    console.log('Checking route matches for:', req.path);
+    apiRouter.stack.forEach((layer: any, index: number) => {
+        if (layer.route) {
+            const match = layer.regexp.test(req.path);
+            console.log(`Route ${index}:`, {
+                path: layer.route.path,
+                regexp: layer.regexp.toString(),
+                matches: match
+            });
+        }
+    });
+    console.log(`[API Route Debug] ==================\n`);
+    next();
 });
 
+// Mount API router
 console.log('[Setup] Mounting API router at /api');
 app.use('/api', apiRouter);
 console.log('[Setup] API router mounted');
 
-console.log('[Setup] API Routes after mounting:');
+// Log registered API routes
+console.log('[Setup] API Routes:');
 apiRouter.stack.forEach((layer: any, index: number) => {
-    console.log(`[${index}] ${layer.name} ${layer.regexp} ${layer.route?.path}`);
+    if (layer.route) {
+        console.log(`[${index}] ${Object.keys(layer.route.methods).join(', ')} ${layer.route.path} (${layer.regexp})`);
+    }
 });
 
 // Root test route
@@ -179,7 +188,8 @@ app.use((req, res, next) => {
         .map((layer: any) => ({
             name: layer.name,
             regexp: layer.regexp?.toString(),
-            path: layer.route?.path
+            path: layer.route?.path,
+            matches: layer.regexp?.test(req.path)
         }))
     );
     console.log(`[Route Debug] ==================\n`);
@@ -196,18 +206,20 @@ app.use((req, res) => {
     console.log(`[404] Protocol: ${req.protocol}`);
     console.log(`[404] Headers:`, JSON.stringify(req.headers, null, 2));
     
-    // Log registered routes
-    console.log('[404] Available routes:');
+    // Log registered routes and their match status
+    console.log('[404] Available routes and match status:');
     app._router.stack.forEach((layer: any, index: number) => {
         if (layer.route) {
-            console.log(`  [${index}] ${Object.keys(layer.route.methods).join(', ')} ${layer.route.path}`);
+            const matches = layer.regexp.test(req.path);
+            console.log(`  [${index}] Route ${layer.route.path} - Matches: ${matches}`);
         } else if (layer.name === 'router') {
             console.log(`  [${index}] Router at ${layer.regexp}:`);
+            const routerMatches = layer.regexp.test(req.path);
+            console.log(`    Router match: ${routerMatches}`);
             layer.handle.stack.forEach((routerLayer: any, routerIndex: number) => {
                 if (routerLayer.route) {
-                    const methods = Object.keys(routerLayer.route.methods).join(', ');
-                    const fullPath = `/api${routerLayer.route.path}`;
-                    console.log(`    [${routerIndex}] ${methods.toUpperCase()} ${fullPath}`);
+                    const matches = routerLayer.regexp.test(req.path.replace('/api', ''));
+                    console.log(`    [${routerIndex}] ${routerLayer.route.path} - Matches: ${matches}`);
                 }
             });
         }
