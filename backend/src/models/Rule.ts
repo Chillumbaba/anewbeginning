@@ -16,8 +16,7 @@ interface IRuleModel extends Model<IRule> {
 const ruleSchema = new Schema({
   number: {
     type: Number,
-    required: true,
-    unique: true
+    required: true
   },
   name: {
     type: String,
@@ -50,5 +49,16 @@ ruleSchema.statics.createDefaultRules = async function() {
     await this.insertMany(defaultRules);
   }
 };
+
+// Pre-save middleware to ensure number is unique
+ruleSchema.pre('save', async function(this: IRule & { constructor: IRuleModel }, next) {
+  if (this.isNew || this.isModified('number')) {
+    const existingRule = await this.constructor.findOne({ number: this.number });
+    if (existingRule && existingRule._id.toString() !== this._id?.toString()) {
+      throw new Error('A rule with this number already exists');
+    }
+  }
+  next();
+});
 
 export const Rule = model<IRule, IRuleModel>('Rule', ruleSchema); 

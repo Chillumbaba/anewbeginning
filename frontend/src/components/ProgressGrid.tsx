@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Grid, Paper, Typography } from '@mui/material';
+import { Grid, Paper, Typography, Box } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import api from '../services/api';
@@ -103,56 +103,75 @@ const ProgressGrid: React.FC = () => {
       <Paper
         elevation={1}
         sx={{
-          height: 35,
+          width: '30px',
+          height: '30px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
           '&:hover': { backgroundColor: '#f5f5f5' },
-          margin: '2px'
+          padding: 0,
+          margin: 0
         }}
         onClick={() => handleCellClick(date, rule)}
       >
-        {status === 'tick' && <CheckIcon color="success" sx={{ fontSize: 20 }} />}
-        {status === 'cross' && <CloseIcon color="error" sx={{ fontSize: 20 }} />}
+        {status === 'tick' && <CheckIcon sx={{ fontSize: 18 }} color="success" />}
+        {status === 'cross' && <CloseIcon sx={{ fontSize: 18 }} color="error" />}
       </Paper>
     );
   };
 
   return (
-    <div style={{ padding: '10px', maxWidth: '800px', margin: '0 auto' }}>
+    <Box sx={{ padding: '10px', maxWidth: 'fit-content', margin: '0 auto' }}>
       <Typography variant="h5" gutterBottom>Progress Grid</Typography>
       {error && (
         <Typography color="error" gutterBottom>
           {error}
         </Typography>
       )}
-      <Grid container spacing={1}>
-        <Grid item xs={2}></Grid>
+      
+      <Box sx={{ display: 'grid', gridTemplateColumns: `80px repeat(${rules.length}, 30px)`, gap: '4px' }}>
+        {/* Header row with rule names */}
+        <Box sx={{ gridColumn: '1', height: '40px' }}></Box>
         {rules.map(rule => (
-          <Grid item xs={2.5} key={rule.number}>
-            <Typography variant="subtitle1" align="center" title={rule.description || ''}>
-              {rule.name}
-            </Typography>
-          </Grid>
+          <Box 
+            key={rule.number}
+            sx={{
+              writingMode: 'vertical-rl',
+              transform: 'rotate(180deg)',
+              height: '40px',
+              fontSize: '0.75rem',
+              textAlign: 'center',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              title: rule.description || ''
+            }}
+          >
+            {rule.name}
+          </Box>
         ))}
 
+        {/* Date rows with cells */}
         {dates.map((date, index) => (
           <React.Fragment key={date}>
-            <Grid item xs={2}>
-              <Typography variant="body2" style={{ fontSize: '0.9rem' }}>
-                {index === 0 ? 'Today' : index === 1 ? 'Yesterday' : date}
-              </Typography>
-            </Grid>
+            <Box sx={{ 
+              gridColumn: '1',
+              fontSize: '0.8rem',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              {index === 0 ? 'Today' : index === 1 ? 'Yesterday' : date}
+            </Box>
             {rules.map(rule => (
-              <Grid item xs={2.5} key={`${date}-${rule.number}`}>
+              <Box key={`${date}-${rule.number}`}>
                 {renderCell(date, rule.number)}
-              </Grid>
+              </Box>
             ))}
           </React.Fragment>
         ))}
-      </Grid>
-    </div>
+      </Box>
+    </Box>
   );
 };
 

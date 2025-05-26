@@ -1,10 +1,15 @@
 import express, { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
 import gridRoutes from './routes/gridRoutes';
 import textRoutes from './routes/textRoutes';
 import ruleRoutes from './routes/ruleRoutes';
 import { Rule } from './models/Rule';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
@@ -14,6 +19,9 @@ app.use(express.json());
 
 // MongoDB Atlas connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tasktracker';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+console.log('Connecting to MongoDB...', { NODE_ENV });
 
 mongoose.connect(MONGODB_URI)
 .then(async () => {
@@ -33,7 +41,17 @@ app.use('/api', ruleRoutes);
 
 // Root API route
 app.get('/api', (_req: Request, res: Response) => {
-  res.json({ message: 'Welcome to the Task Tracker API' });
+  res.json({
+    message: 'A New Beginning API',
+    status: 'running',
+    environment: NODE_ENV,
+    endpoints: {
+      health: '/api/health',
+      texts: '/api/texts',
+      grid: '/api/grid-data',
+      rules: '/api/rules'
+    }
+  });
 });
 
 // Root route redirect
@@ -49,5 +67,5 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
 }); 

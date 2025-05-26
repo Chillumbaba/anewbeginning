@@ -16,10 +16,28 @@ router.get('/rules', async (_req: Request, res: Response) => {
 // Create a new rule
 router.post('/rules', async (req: Request, res: Response) => {
   try {
+    // Validate required fields
+    const { number, name } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+    if (typeof number !== 'number' || isNaN(number)) {
+      return res.status(400).json({ message: 'Valid number is required' });
+    }
+
+    // Check if number already exists
+    const existingRule = await Rule.findOne({ number });
+    if (existingRule) {
+      return res.status(400).json({ message: 'A rule with this number already exists' });
+    }
+
+    console.log('Creating new rule:', req.body);
     const rule = new Rule(req.body);
     const savedRule = await rule.save();
+    console.log('Rule created:', savedRule);
     res.status(201).json(savedRule);
   } catch (error) {
+    console.error('Error creating rule:', error);
     res.status(400).json({ message: error instanceof Error ? error.message : 'An error occurred' });
   }
 });
@@ -30,7 +48,7 @@ router.put('/rules/:id', async (req: Request, res: Response) => {
     const updatedRule = await Rule.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!updatedRule) {
       return res.status(404).json({ message: 'Rule not found' });

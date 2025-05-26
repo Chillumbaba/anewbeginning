@@ -14,7 +14,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Typography
+  Typography,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -26,6 +28,15 @@ interface Rule {
   name: string;
   description?: string;
   active: boolean;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+    status?: number;
+  };
 }
 
 const Rules: React.FC = () => {
@@ -40,54 +51,90 @@ const Rules: React.FC = () => {
 
   const fetchRules = async () => {
     try {
+      console.log('Fetching rules...');
       const response = await api.get('/api/rules');
+      console.log('Rules fetched:', response.data);
       setRules(response.data);
+      setError(null);
     } catch (err) {
-      setError('Failed to load rules');
       console.error('Error fetching rules:', err);
+      setError('Failed to load rules');
     }
   };
 
   const handleOpen = (rule?: Rule) => {
-    setEditingRule(rule || {
+    setError(null);
+    const newRule = rule || {
       _id: '',
-      number: rules.length + 1,
+      number: Math.max(0, ...rules.map(r => r.number)) + 1,
       name: '',
       description: '',
       active: true
-    });
+    };
+    console.log('Opening dialog with rule:', newRule);
+    setEditingRule(newRule);
     setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
     setEditingRule(null);
+    setError(null);
   };
 
   const handleSave = async () => {
     if (!editingRule) return;
 
     try {
-      if (editingRule._id) {
-        await api.put(`/api/rules/${editingRule._id}`, editingRule);
-      } else {
-        await api.post('/api/rules', editingRule);
+      if (!editingRule.name.trim()) {
+        throw new Error('Name is required');
       }
-      fetchRules();
+
+      console.log('Saving rule:', editingRule);
+      
+      if (editingRule._id) {
+        console.log('Updating existing rule...');
+        const response = await api.put(`/api/rules/${editingRule._id}`, editingRule);
+        console.log('Update response:', response.data);
+      } else {
+        console.log('Creating new rule...');
+        // Remove the _id field for new rules
+        const { _id, ...newRule } = editingRule;
+        const response = await api.post('/api/rules', newRule);
+        console.log('Create response:', response.data);
+      }
+      
+      setError(null);
+      await fetchRules();
       handleClose();
     } catch (err) {
-      setError('Failed to save rule');
       console.error('Error saving rule:', err);
+      let errorMessage = 'Failed to save rule';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (err && typeof err === 'object') {
+        const apiError = err as ApiError;
+        if (apiError.response?.data?.message) {
+          errorMessage = apiError.response.data.message;
+        }
+        console.error('API Error Status:', apiError.response?.status);
+        console.error('API Error Data:', apiError.response?.data);
+      }
+      
+      setError(errorMessage);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
+      console.log('Deleting rule:', id);
       await api.delete(`/api/rules/${id}`);
-      fetchRules();
+      setError(null);
+      await fetchRules();
     } catch (err) {
-      setError('Failed to delete rule');
       console.error('Error deleting rule:', err);
+      setError('Failed to delete rule');
     }
   };
 
@@ -159,6 +206,7 @@ const Rules: React.FC = () => {
             label="Name"
             type="text"
             fullWidth
+            required
             value={editingRule?.name || ''}
             onChange={(e) => setEditingRule(prev => prev ? {...prev, name: e.target.value} : null)}
           />
@@ -171,6 +219,17 @@ const Rules: React.FC = () => {
             rows={2}
             value={editingRule?.description || ''}
             onChange={(e) => setEditingRule(prev => prev ? {...prev, description: e.target.value} : null)}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={editingRule?.active || false}
+                onChange={(e) => setEditingRule(prev => prev ? {...prev, active: e.target.checked} : null)}
+                color="primary"
+              />
+            }
+            label="Active"
+            style={{ marginTop: '10px' }}
           />
         </DialogContent>
         <DialogActions>
