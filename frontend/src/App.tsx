@@ -6,6 +6,9 @@ interface Text {
   createdAt: string;
 }
 
+// API URL based on environment
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 function App() {
   const [inputText, setInputText] = useState('');
   const [texts, setTexts] = useState<Text[]>([]);
@@ -18,7 +21,7 @@ function App() {
 
   const fetchTexts = async () => {
     try {
-      const response = await fetch('https://anewbeginning-backend.onrender.com/api/texts');
+      const response = await fetch(`${API_URL}/api/texts`);
       if (!response.ok) {
         throw new Error('Failed to fetch texts');
       }
@@ -34,7 +37,7 @@ function App() {
     if (!inputText.trim()) return;
 
     try {
-      const response = await fetch('https://anewbeginning-backend.onrender.com/api/texts', {
+      const response = await fetch(`${API_URL}/api/texts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
