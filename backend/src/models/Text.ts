@@ -1,6 +1,11 @@
-import mongoose from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 
-const textSchema = new mongoose.Schema({
+export interface IText extends Document {
+    content: string;
+    createdAt: Date;
+}
+
+const textSchema = new Schema({
     content: {
         type: String,
         required: true,
@@ -12,4 +17,4 @@ const textSchema = new mongoose.Schema({
     }
 });
 
-export const Text = mongoose.model('Text', textSchema); 
+export const Text = model<IText>('Text', textSchema); 

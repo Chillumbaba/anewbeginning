@@ -1,124 +1,41 @@
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load environment variables from .env file
-dotenv.config();
-
-import express, { Router, Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
-import mongoose, { Error } from 'mongoose';
-import { Text } from './models/Text';
+import gridRoutes from './routes/gridRoutes';
+import textRoutes from './routes/textRoutes';
 
 const app = express();
-const port = process.env.PORT || 3001;
 
-// Environment-specific configuration
-const isDevelopment = process.env.NODE_ENV !== 'production';
-const MONGODB_URI = process.env.MONGODB_URI || 'your_mongodb_connection_string';
-
-const FRONTEND_URL = isDevelopment
-    ? 'http://localhost:3000'
-    : 'https://anewbeginning-frontend.onrender.com';
-
-// Log the MongoDB URI (but mask the password)
-const maskedUri = process.env.MONGODB_URI?.replace(/:([^:@]+)@/, ':****@');
-console.log('Attempting to connect to MongoDB with URI:', maskedUri);
-
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI as string)
-    .then(() => console.log('Connected to MongoDB Atlas'))
-    .catch((err: Error) => console.error('MongoDB connection error:', err));
-
-// Trust proxy - required for correct protocol detection behind Render's proxy
-app.set('trust proxy', true);
-
-// CORS configuration
-const corsOptions = {
-    origin: [FRONTEND_URL, 'http://localhost:3000'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    credentials: true,
-    maxAge: 86400
-};
-
-app.use(cors(corsOptions));
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// Create API router
-const apiRouter = Router();
+// MongoDB Atlas connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tasktracker';
 
-// Health check route
-apiRouter.get('/health', (req: Request, res: Response) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
-    });
+mongoose.connect(MONGODB_URI)
+.then(() => console.log('Successfully connected to MongoDB Atlas'))
+.catch(err => {
+  console.error('MongoDB Atlas connection error:', err);
+  process.exit(1);
 });
-
-// Text routes
-apiRouter.post('/texts', async (req: Request, res: Response) => {
-    try {
-        const { content } = req.body;
-        if (!content) {
-            return res.status(400).json({ error: 'Content is required' });
-        }
-
-        const text = new Text({ content });
-        await text.save();
-        res.status(201).json(text);
-    } catch (error) {
-        console.error('Error saving text:', error);
-        res.status(500).json({ error: 'Failed to save text' });
-    }
-});
-
-apiRouter.get('/texts', async (req: Request, res: Response) => {
-    try {
-        const texts = await Text.find().sort({ createdAt: -1 });
-        res.json(texts);
-    } catch (error) {
-        console.error('Error fetching texts:', error);
-        res.status(500).json({ error: 'Failed to fetch texts' });
-    }
-});
-
-// Mount API router
-app.use('/api', apiRouter);
 
 // Root route
-app.get('/', (req: Request, res: Response) => {
-    res.json({
-        message: 'A New Beginning API',
-        status: 'running',
-        environment: process.env.NODE_ENV || 'development',
-        endpoints: {
-            health: '/api/health',
-            texts: '/api/texts'
-        }
-    });
+app.get('/', (_req: Request, res: Response) => {
+  res.json({ message: 'Welcome to the Task Tracker API' });
 });
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-    res.status(404).json({
-        error: 'Not Found',
-        path: req.originalUrl,
-        method: req.method,
-        timestamp: new Date().toISOString()
-    });
+// Routes
+app.use('/api', gridRoutes);
+app.use('/api', textRoutes);
+
+// Error handling middleware
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error('[Error]', err);
-    res.status(500).json({
-        error: 'Internal Server Error',
-        message: process.env.NODE_ENV === 'development' ? err.message : 'An error occurred'
-    });
-});
-
-// Start server
-app.listen(port, () => {
-    console.log(`Server running on port ${port} in ${process.env.NODE_ENV || 'development'} mode`);
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 }); 
