@@ -1,8 +1,16 @@
 import express, { Router, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
+import { Text } from './models/Text';
 
 const app = express();
 const port = process.env.PORT || 3001;
+
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || 'your_mongodb_connection_string';
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // Trust proxy - required for correct protocol detection behind Render's proxy
 app.set('trust proxy', true);
@@ -31,36 +39,35 @@ apiRouter.get('/health', (req: Request, res: Response) => {
     });
 });
 
-// API test route
-apiRouter.get('/test', (req: Request, res: Response) => {
-    res.json({
-        message: 'API test endpoint',
-        url: req.url,
-        baseUrl: req.baseUrl,
-        originalUrl: req.originalUrl,
-        path: req.path,
-        protocol: req.protocol,
-        secure: req.secure,
-        headers: req.headers
-    });
+// Text routes
+apiRouter.post('/texts', async (req: Request, res: Response) => {
+    try {
+        const { content } = req.body;
+        if (!content) {
+            return res.status(400).json({ error: 'Content is required' });
+        }
+
+        const text = new Text({ content });
+        await text.save();
+        res.status(201).json(text);
+    } catch (error) {
+        console.error('Error saving text:', error);
+        res.status(500).json({ error: 'Failed to save text' });
+    }
+});
+
+apiRouter.get('/texts', async (req: Request, res: Response) => {
+    try {
+        const texts = await Text.find().sort({ createdAt: -1 });
+        res.json(texts);
+    } catch (error) {
+        console.error('Error fetching texts:', error);
+        res.status(500).json({ error: 'Failed to fetch texts' });
+    }
 });
 
 // Mount API router
 app.use('/api', apiRouter);
-
-// Root test route
-app.get('/test', (req: Request, res: Response) => {
-    res.json({
-        message: 'Root test endpoint',
-        url: req.url,
-        baseUrl: req.baseUrl,
-        originalUrl: req.originalUrl,
-        path: req.path,
-        protocol: req.protocol,
-        secure: req.secure,
-        headers: req.headers
-    });
-});
 
 // Root route
 app.get('/', (req: Request, res: Response) => {
@@ -69,9 +76,8 @@ app.get('/', (req: Request, res: Response) => {
         status: 'running',
         environment: process.env.NODE_ENV || 'development',
         endpoints: {
-            test: '/test',
-            'api-test': '/api/test',
-            health: '/api/health'
+            health: '/api/health',
+            texts: '/api/texts'
         }
     });
 });
