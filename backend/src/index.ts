@@ -1,23 +1,40 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from .env file
+dotenv.config();
+
 import express, { Router, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
+import mongoose, { Error } from 'mongoose';
 import { Text } from './models/Text';
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-// MongoDB connection
+// Environment-specific configuration
+const isDevelopment = process.env.NODE_ENV !== 'production';
 const MONGODB_URI = process.env.MONGODB_URI || 'your_mongodb_connection_string';
-mongoose.connect(MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('MongoDB connection error:', err));
+
+const FRONTEND_URL = isDevelopment
+    ? 'http://localhost:3000'
+    : 'https://anewbeginning-frontend.onrender.com';
+
+// Log the MongoDB URI (but mask the password)
+const maskedUri = process.env.MONGODB_URI?.replace(/:([^:@]+)@/, ':****@');
+console.log('Attempting to connect to MongoDB with URI:', maskedUri);
+
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI as string)
+    .then(() => console.log('Connected to MongoDB Atlas'))
+    .catch((err: Error) => console.error('MongoDB connection error:', err));
 
 // Trust proxy - required for correct protocol detection behind Render's proxy
 app.set('trust proxy', true);
 
 // CORS configuration
 const corsOptions = {
-    origin: '*',
+    origin: [FRONTEND_URL, 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
