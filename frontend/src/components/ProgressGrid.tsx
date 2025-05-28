@@ -134,22 +134,24 @@ const ProgressGrid: React.FC = () => {
         {/* Header row with rule names */}
         <Box sx={{ gridColumn: '1', height: '40px' }}></Box>
         {rules.map(rule => (
-          <Tooltip key={rule.number} title={rule.description || ''}>
-            <Box 
-              sx={{
-                writingMode: 'vertical-rl',
-                transform: 'rotate(180deg)',
-                height: '40px',
-                fontSize: '0.75rem',
-                textAlign: 'center',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {rule.name}
-            </Box>
-          </Tooltip>
+          <Box key={rule.number}>
+            <Tooltip title={rule.description || ''} placement="top">
+              <Typography
+                sx={{
+                  writingMode: 'vertical-rl',
+                  transform: 'rotate(180deg)',
+                  height: '40px',
+                  fontSize: '0.75rem',
+                  textAlign: 'center',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {rule.name}
+              </Typography>
+            </Tooltip>
+          </Box>
         ))}
 
         {/* Date rows with cells */}
