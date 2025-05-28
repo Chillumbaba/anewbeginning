@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Grid, Paper, Typography, Box } from '@mui/material';
+import { Grid, Paper, Typography, Box, Tooltip } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import api from '../services/api';
@@ -134,22 +134,22 @@ const ProgressGrid: React.FC = () => {
         {/* Header row with rule names */}
         <Box sx={{ gridColumn: '1', height: '40px' }}></Box>
         {rules.map(rule => (
-          <Box 
-            key={rule.number}
-            sx={{
-              writingMode: 'vertical-rl',
-              transform: 'rotate(180deg)',
-              height: '40px',
-              fontSize: '0.75rem',
-              textAlign: 'center',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              title: rule.description || ''
-            }}
-          >
-            {rule.name}
-          </Box>
+          <Tooltip key={rule.number} title={rule.description || ''}>
+            <Box 
+              sx={{
+                writingMode: 'vertical-rl',
+                transform: 'rotate(180deg)',
+                height: '40px',
+                fontSize: '0.75rem',
+                textAlign: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {rule.name}
+            </Box>
+          </Tooltip>
         ))}
 
         {/* Date rows with cells */}
