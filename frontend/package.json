@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "react-scripts start",
-    "build": "npm install --legacy-peer-deps && react-scripts build",
-    "serve": "npm install -g serve && serve -s build",
+    "build": "react-scripts build",
+    "serve": "node serve.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -23,6 +23,7 @@
     "@types/react-dom": "^18.2.19",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.6.7",
+    "express": "^4.18.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.0",

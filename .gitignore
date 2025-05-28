@@ -1,6 +1,7 @@
 # Frontend
 frontend/node_modules
 frontend/.env
+!frontend/.env.production
 frontend/build
 frontend/coverage
 frontend/.DS_Store
@@ -9,6 +10,7 @@ frontend/.DS_Store
 backend/node_modules
 backend/dist
 backend/.env
+!backend/.env.production
 backend/coverage
 backend/.DS_Store
 
