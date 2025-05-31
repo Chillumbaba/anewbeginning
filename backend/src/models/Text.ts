@@ -1,20 +1,18 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 
-export interface IText extends Document {
+interface IText extends Document {
     content: string;
     createdAt: Date;
 }
 
-const textSchema = new Schema({
+const textSchema = new mongoose.Schema({
     content: {
         type: String,
         required: true,
         trim: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
     }
+}, {
+    timestamps: true
 });
 
-export const Text = model<IText>('Text', textSchema); 
+export const Text = mongoose.model<IText>('Text', textSchema); 

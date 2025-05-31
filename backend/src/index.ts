@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import gridDataRoutes from './routes/gridData';
 import rulesRoutes from './routes/rules';
+import textsRoutes from './routes/texts';
 import { Rule } from './models/Rule';
 
 // Load environment variables
@@ -33,6 +34,7 @@ mongoose.connect(MONGODB_URI)
 // API Routes
 app.use('/api/grid-data', gridDataRoutes);
 app.use('/api/rules', rulesRoutes);
+app.use('/api/texts', textsRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
