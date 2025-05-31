@@ -1,18 +1,37 @@
-import mongoose from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 
-interface IGridData {
+interface IGridData extends Document {
   date: string;
   rule: number;
   status: 'blank' | 'tick' | 'cross';
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const gridDataSchema = new mongoose.Schema<IGridData>({
-  date: { type: String, required: true },
-  rule: { type: Number, required: true },
+  date: { 
+    type: String, 
+    required: true,
+    validate: {
+      validator: function(v: string) {
+        // Validate date format (DD/MM)
+        return /^\d{2}\/\d{2}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid date format! Use DD/MM`
+    }
+  },
+  rule: { 
+    type: Number, 
+    required: true,
+    min: [1, 'Rule number must be at least 1']
+  },
   status: { 
     type: String, 
     required: true,
-    enum: ['blank', 'tick', 'cross']
+    enum: {
+      values: ['blank', 'tick', 'cross'],
+      message: '{VALUE} is not a valid status'
+    }
   }
 }, {
   timestamps: true
@@ -20,5 +39,13 @@ const gridDataSchema = new mongoose.Schema<IGridData>({
 
 // Create a compound index on date and rule to ensure uniqueness
 gridDataSchema.index({ date: 1, rule: 1 }, { unique: true });
+
+// Pre-save middleware to ensure status is valid
+gridDataSchema.pre('save', function(next) {
+  if (!['blank', 'tick', 'cross'].includes(this.status)) {
+    next(new Error('Invalid status value'));
+  }
+  next();
+});
 
 export const GridData = mongoose.model<IGridData>('GridData', gridDataSchema); 
