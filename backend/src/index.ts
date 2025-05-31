@@ -1,6 +1,6 @@
-import express, { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
+import express from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 import gridRoutes from './routes/gridRoutes';
@@ -12,60 +12,35 @@ import { Rule } from './models/Rule';
 dotenv.config();
 
 const app = express();
+const port = process.env.PORT || 10000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Atlas connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tasktracker';
-const NODE_ENV = process.env.NODE_ENV || 'development';
-
-console.log('Connecting to MongoDB...', { NODE_ENV });
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://KP:myvibingpassword1@cluster0.p65cujw.mongodb.net/anewbeginning?retryWrites=true&w=majority&appName=Cluster0';
 
 mongoose.connect(MONGODB_URI)
-.then(async () => {
-  console.log('Successfully connected to MongoDB Atlas');
-  // Initialize default rules
-  await Rule.createDefaultRules();
-})
-.catch(err => {
-  console.error('MongoDB Atlas connection error:', err);
-  process.exit(1);
-});
+  .then(async () => {
+    console.log('Connected to MongoDB');
+    // Initialize default rules
+    await Rule.createDefaultRules();
+  })
+  .catch((error) => {
+    console.error('Error connecting to MongoDB:', error);
+  });
 
 // API Routes
 app.use('/api', gridRoutes);
 app.use('/api', textRoutes);
 app.use('/api', ruleRoutes);
 
-// Root API route
-app.get('/api', (_req: Request, res: Response) => {
-  res.json({
-    message: 'A New Beginning API',
-    status: 'running',
-    environment: NODE_ENV,
-    endpoints: {
-      health: '/api/health',
-      texts: '/api/texts',
-      grid: '/api/grid-data',
-      rules: '/api/rules'
-    }
-  });
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
-// Root route redirect
-app.get('/', (_req: Request, res: Response) => {
-  res.redirect('/api');
-});
-
-// Error handling middleware
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 }); 

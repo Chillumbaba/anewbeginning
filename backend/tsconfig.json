@@ -11,7 +11,7 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "typeRoots": ["./node_modules/@types"],
-    "types": ["node", "express", "cors", "mongoose"]
+    "types": ["node", "express", "cors", "jsonwebtoken"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
