@@ -3,9 +3,8 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
-import gridRoutes from './routes/gridRoutes';
-import textRoutes from './routes/textRoutes';
-import ruleRoutes from './routes/ruleRoutes';
+import gridDataRoutes from './routes/gridData';
+import rulesRoutes from './routes/rules';
 import { Rule } from './models/Rule';
 
 // Load environment variables
@@ -32,9 +31,8 @@ mongoose.connect(MONGODB_URI)
   });
 
 // API Routes
-app.use('/api', gridRoutes);
-app.use('/api', textRoutes);
-app.use('/api', ruleRoutes);
+app.use('/api/grid-data', gridDataRoutes);
+app.use('/api/rules', rulesRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

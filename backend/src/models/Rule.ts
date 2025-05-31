@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 interface IRule {
   number: number;
@@ -7,7 +7,13 @@ interface IRule {
   active: boolean;
 }
 
-const ruleSchema = new mongoose.Schema<IRule>({
+interface IRuleDocument extends IRule, Document {}
+
+interface IRuleModel extends Model<IRuleDocument> {
+  createDefaultRules(): Promise<void>;
+}
+
+const ruleSchema = new mongoose.Schema<IRuleDocument>({
   number: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   description: { type: String },
@@ -30,4 +36,4 @@ ruleSchema.statics.createDefaultRules = async function() {
   }
 };
 
-export const Rule = mongoose.model<IRule>('Rule', ruleSchema); 
+export const Rule = mongoose.model<IRuleDocument, IRuleModel>('Rule', ruleSchema); 

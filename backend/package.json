@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
+    "preinstall": "npm install -g typescript",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
@@ -13,14 +14,13 @@
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.1.1"
-  },
-  "devDependencies": {
+    "mongoose": "^8.1.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.5",
-    "@types/mongoose": "^5.11.97",
-    "@types/node": "^20.11.16",
+    "@types/node": "^20.11.16"
+  },
+  "devDependencies": {
     "nodemon": "^3.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
