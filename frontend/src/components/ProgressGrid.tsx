@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Grid, Paper, Typography, Box, Tooltip } from '@mui/material';
+import { Paper, Typography, Box, Tooltip, IconButton } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import api from '../services/api';
@@ -18,7 +18,7 @@ interface Rule {
   active: boolean;
 }
 
-const ProgressGrid: React.FC = () => {
+const ProgressGrid = () => {
   const [gridData, setGridData] = useState<GridCell[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -100,57 +100,97 @@ const ProgressGrid: React.FC = () => {
   const renderCell = (date: string, rule: number) => {
     const status = getCellStatus(date, rule);
     return (
-      <Paper
-        elevation={1}
-        sx={{
-          width: '30px',
-          height: '30px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          '&:hover': { backgroundColor: '#f5f5f5' },
-          padding: 0,
-          margin: 0
-        }}
+      <IconButton
+        size="small"
         onClick={() => handleCellClick(date, rule)}
+        sx={{
+          width: '40px',
+          height: '40px',
+          padding: 0,
+          backgroundColor: '#f8f9fa',
+          border: '1px solid #dee2e6',
+          borderRadius: '4px',
+          '&:hover': { 
+            backgroundColor: '#e9ecef',
+            borderColor: '#ced4da'
+          }
+        }}
       >
-        {status === 'tick' && <CheckIcon sx={{ fontSize: 18 }} color="success" />}
-        {status === 'cross' && <CloseIcon sx={{ fontSize: 18 }} color="error" />}
-      </Paper>
+        {status === 'tick' && <CheckIcon fontSize="small" color="success" />}
+        {status === 'cross' && <CloseIcon fontSize="small" color="error" />}
+      </IconButton>
+    );
+  };
+
+  const renderRuleHeader = (rule: Rule) => {
+    const typographyStyles = {
+      writingMode: 'vertical-rl',
+      transform: 'rotate(180deg)',
+      height: '60px',
+      fontSize: '0.75rem',
+      textAlign: 'center',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      cursor: rule.description ? 'help' : 'default',
+      padding: '4px'
+    };
+
+    if (rule.description) {
+      return (
+        <Tooltip arrow title={rule.description} placement="top">
+          <Box component="div" sx={{
+            backgroundColor: '#f8f9fa',
+            border: '1px solid #dee2e6',
+            borderRadius: '4px',
+            height: '100%'
+          }}>
+            <Typography sx={typographyStyles}>
+              {rule.name}
+            </Typography>
+          </Box>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Box sx={{
+        backgroundColor: '#f8f9fa',
+        border: '1px solid #dee2e6',
+        borderRadius: '4px',
+        height: '100%'
+      }}>
+        <Typography sx={typographyStyles}>
+          {rule.name}
+        </Typography>
+      </Box>
     );
   };
 
   return (
-    <Box sx={{ padding: '10px', maxWidth: 'fit-content', margin: '0 auto' }}>
-      <Typography variant="h5" gutterBottom>Progress Grid</Typography>
+    <Paper elevation={2} sx={{ padding: '20px', maxWidth: 'fit-content', margin: '0 auto' }}>
+      <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', color: '#2c3e50', marginBottom: '20px' }}>
+        Progress Grid
+      </Typography>
       {error && (
         <Typography color="error" gutterBottom>
           {error}
         </Typography>
       )}
       
-      <Box sx={{ display: 'grid', gridTemplateColumns: `80px repeat(${rules.length}, 30px)`, gap: '4px' }}>
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: `100px repeat(${rules.length}, 40px)`, 
+        gap: '8px',
+        backgroundColor: '#ffffff',
+        padding: '16px',
+        borderRadius: '8px'
+      }}>
         {/* Header row with rule names */}
-        <Box sx={{ gridColumn: '1', height: '40px' }}></Box>
+        <Box sx={{ gridColumn: '1', height: '60px' }} />
         {rules.map(rule => (
-          <Box key={rule.number}>
-            <Tooltip title={rule.description || ''} placement="top">
-              <Typography
-                sx={{
-                  writingMode: 'vertical-rl',
-                  transform: 'rotate(180deg)',
-                  height: '40px',
-                  fontSize: '0.75rem',
-                  textAlign: 'center',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {rule.name}
-              </Typography>
-            </Tooltip>
+          <Box key={rule.number} sx={{ height: '60px' }}>
+            {renderRuleHeader(rule)}
           </Box>
         ))}
 
@@ -159,9 +199,15 @@ const ProgressGrid: React.FC = () => {
           <React.Fragment key={date}>
             <Box sx={{ 
               gridColumn: '1',
-              fontSize: '0.8rem',
+              fontSize: '0.9rem',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              padding: '8px',
+              backgroundColor: '#f8f9fa',
+              border: '1px solid #dee2e6',
+              borderRadius: '4px',
+              fontWeight: index === 0 ? 'bold' : 'normal',
+              color: '#2c3e50'
             }}>
               {index === 0 ? 'Today' : index === 1 ? 'Yesterday' : date}
             </Box>
@@ -173,7 +219,7 @@ const ProgressGrid: React.FC = () => {
           </React.Fragment>
         ))}
       </Box>
-    </Box>
+    </Paper>
   );
 };
 
