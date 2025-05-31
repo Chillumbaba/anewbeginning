@@ -7,16 +7,8 @@ const Navigation: React.FC = () => {
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Task Tracker
+          Benjamin Franklin Method
         </Typography>
-        <Button
-          color="inherit"
-          component={RouterLink}
-          to="/"
-          sx={{ textDecoration: 'none', color: 'inherit' }}
-        >
-          Home
-        </Button>
         <Button
           color="inherit"
           component={RouterLink}
@@ -28,10 +20,26 @@ const Navigation: React.FC = () => {
         <Button
           color="inherit"
           component={RouterLink}
+          to="/stats"
+          sx={{ textDecoration: 'none', color: 'inherit' }}
+        >
+          Statistics
+        </Button>
+        <Button
+          color="inherit"
+          component={RouterLink}
           to="/rules"
           sx={{ textDecoration: 'none', color: 'inherit' }}
         >
           Rules
+        </Button>
+        <Button
+          color="inherit"
+          component={RouterLink}
+          to="/test-db"
+          sx={{ textDecoration: 'none', color: 'inherit' }}
+        >
+          Test DB
         </Button>
       </Toolbar>
     </AppBar>
