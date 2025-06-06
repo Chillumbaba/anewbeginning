@@ -1,123 +1,62 @@
-import React, { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Button,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  useTheme,
-  useMediaQuery,
-  Box
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-
-interface NavItem {
-  text: string;
-  path: string;
-}
-
-const navItems: NavItem[] = [
-  { text: 'Progress Grid', path: '/grid' },
-  { text: 'Statistics', path: '/stats' },
-  { text: 'Rules', path: '/rules' },
-  { text: 'Test DB', path: '/test-db' }
-];
+import React from 'react';
+import { AppBar, Toolbar, Button, Box, useTheme } from '@mui/material';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navigation: React.FC = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const isActive = (path: string) => location.pathname === path;
 
-  const drawer = (
-    <List>
-      {navItems.map((item) => (
-        <ListItem 
-          key={item.path}
-          component={RouterLink}
-          to={item.path}
-          onClick={handleDrawerToggle}
-          sx={{ 
-            textDecoration: 'none', 
-            color: 'inherit',
-            '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-            }
-          }}
-        >
-          <ListItemText primary={item.text} />
-        </ListItem>
-      ))}
-    </List>
-  );
+  const navItems = [
+    { path: '/grid', label: 'Grid' },
+    { path: '/stats', label: 'Statistics' },
+    { path: '/rules', label: 'Rules' },
+    { path: '/test-db', label: 'Test DB' },
+  ];
 
   return (
-    <AppBar position="static">
-      <Toolbar>
-        <Typography 
-          variant="h6" 
-          component="div" 
-          sx={{ 
-            flexGrow: 1,
-            fontSize: { xs: '1rem', sm: '1.25rem' }
-          }}
-        >
+    <AppBar position="sticky" elevation={0}>
+      <Toolbar sx={{ justifyContent: 'space-between', maxWidth: 1200, width: '100%', margin: '0 auto' }}>
+        <Box component={Link} to="/" sx={{ 
+          textDecoration: 'none',
+          color: 'inherit',
+          fontWeight: 700,
+          fontSize: '1.5rem',
+          letterSpacing: '-0.02em',
+        }}>
           Benjamin Franklin Method
-        </Typography>
-
-        {isMobile ? (
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="end"
-            onClick={handleDrawerToggle}
-          >
-            <MenuIcon />
-          </IconButton>
-        ) : (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {navItems.map((item) => (
-              <Button
-                key={item.path}
-                color="inherit"
-                component={RouterLink}
-                to={item.path}
-                sx={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                {item.text}
-              </Button>
-            ))}
-          </Box>
-        )}
-
-        <Drawer
-          variant="temporary"
-          anchor="right"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true // Better open performance on mobile.
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { 
-              boxSizing: 'border-box', 
-              width: 240,
-              backgroundColor: theme.palette.primary.main,
-              color: theme.palette.primary.contrastText
-            },
-          }}
-        >
-          {drawer}
-        </Drawer>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {navItems.map((item) => (
+            <Button
+              key={item.path}
+              component={Link}
+              to={item.path}
+              sx={{
+                color: 'inherit',
+                fontWeight: isActive(item.path) ? 700 : 400,
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  width: '100%',
+                  height: 3,
+                  backgroundColor: theme.palette.custom.orange,
+                  opacity: isActive(item.path) ? 1 : 0,
+                  transition: 'opacity 0.2s ease-in-out',
+                },
+                '&:hover::after': {
+                  opacity: 0.7,
+                },
+              }}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </Box>
       </Toolbar>
     </AppBar>
   );

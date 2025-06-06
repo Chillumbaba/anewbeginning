@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Button, Typography, Paper, Box, Alert, CircularProgress } from '@mui/material';
 import api from '../services/api';
 
 interface Text {
@@ -11,6 +12,8 @@ const Home: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [texts, setTexts] = useState<Text[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchTexts();
@@ -39,8 +42,92 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleReset = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await api.post('/api/test-db/reset');
+      setSuccess('Database reset successful');
+    } catch (err) {
+      setError('Failed to reset database');
+      console.error('Error resetting database:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePopulate = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await api.post('/api/test-db/populate');
+      setSuccess(`Test data populated successfully: ${JSON.stringify(response.data.summary)}`);
+    } catch (err) {
+      setError('Failed to populate test data');
+      console.error('Error populating test data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+    <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
+      <Paper sx={{ p: 3, backgroundColor: theme => theme.palette.custom.lightBlue }}>
+        <Typography variant="h4" gutterBottom>
+          Test Database Controls
+        </Typography>
+        
+        <Typography variant="body1" sx={{ mb: 3 }}>
+          Use these controls to manage test data in the database. Be careful as these actions cannot be undone.
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
+
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleReset}
+            disabled={loading}
+            sx={{
+              backgroundColor: theme => theme.palette.custom.orange,
+              '&:hover': {
+                backgroundColor: theme => theme.palette.custom.orange,
+                opacity: 0.9,
+              },
+            }}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Reset Database'}
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={handlePopulate}
+            disabled={loading}
+            sx={{
+              backgroundColor: theme => theme.palette.custom.purple,
+              '&:hover': {
+                backgroundColor: theme => theme.palette.custom.purple,
+                opacity: 0.9,
+              },
+            }}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Populate Test Data'}
+          </Button>
+        </Box>
+      </Paper>
+
       <div style={{ marginBottom: '20px' }}>
         <input
           type="text"
@@ -70,12 +157,6 @@ const Home: React.FC = () => {
         </button>
       </div>
 
-      {error && (
-        <div style={{ color: 'red', marginBottom: '10px' }}>
-          {error}
-        </div>
-      )}
-
       <div>
         <h2>Previous Entries</h2>
         {texts.length === 0 ? (
@@ -101,7 +182,7 @@ const Home: React.FC = () => {
           </ul>
         )}
       </div>
-    </div>
+    </Box>
   );
 };
 

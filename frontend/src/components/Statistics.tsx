@@ -1,151 +1,228 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  Paper, 
-  Typography, 
-  Grid, 
-  CircularProgress, 
-  Box,
-  Tooltip
-} from '@mui/material';
+import { Box, Typography, Paper, Grid, CircularProgress, Tabs, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, LinearProgress } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import api from '../services/api';
 
-interface Rule {
-  _id: string;
-  number: number;
-  name: string;
-  description?: string;
-  active: boolean;
+interface RuleProgress {
+  ruleNumber: number;
+  ruleName: string;
+  completionRate: number;
+  totalTicks: number;
 }
 
-interface GridCell {
-  date: string;
-  rule: number;
-  status: 'blank' | 'tick' | 'cross';
+interface StatisticsData {
+  totalRules: number;
+  totalDays: number;
+  completionRate: number;
+  streakCount: number;
+  period: string;
+  ruleProgress: RuleProgress[];
+  totalTicks: number;
+  totalPossibleTicks: number;
 }
+
+const periods = [
+  { label: 'Last Week', value: '1week' },
+  { label: '1 Month', value: '1month' },
+  { label: '3 Months', value: '3months' },
+  { label: '6 Months', value: '6months' },
+  { label: '1 Year', value: '1year' },
+  { label: 'Forever', value: 'forever' }
+];
 
 const Statistics: React.FC = () => {
-  const [rules, setRules] = useState<Rule[]>([]);
-  const [gridData, setGridData] = useState<GridCell[]>([]);
+  const theme = useTheme();
+  const [stats, setStats] = useState<StatisticsData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(5); // Default to 'Forever'
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchStatistics(periods[selectedPeriod].value);
+  }, [selectedPeriod]);
 
-  const fetchData = async () => {
+  const fetchStatistics = async (period: string) => {
     try {
-      const [rulesResponse, gridDataResponse] = await Promise.all([
-        api.get('/api/rules'),
-        api.get('/api/grid-data')
-      ]);
-      
-      const activeRules = rulesResponse.data.filter((rule: Rule) => rule.active);
-      setRules(activeRules);
-      setGridData(gridDataResponse.data);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Failed to load data');
+      setLoading(true);
+      const response = await api.get(`/api/statistics?period=${period}`);
+      setStats(response.data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching statistics:', err);
+      setError('Failed to load statistics');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const calculateRulePerformance = (ruleNumber: number): number => {
-    const ruleData = gridData.filter(cell => cell.rule === ruleNumber);
-    if (ruleData.length === 0) return 0;
-
-    const ticks = ruleData.filter(cell => cell.status === 'tick').length;
-    return Math.round((ticks / ruleData.length) * 100);
+  const handlePeriodChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setSelectedPeriod(newValue);
   };
 
-  const calculateOverallPerformance = (): number => {
-    if (gridData.length === 0) return 0;
-    
-    const ticks = gridData.filter(cell => cell.status === 'tick').length;
-    return Math.round((ticks / gridData.length) * 100);
-  };
-
-  const PerformanceDial: React.FC<{ value: number; title: string; description?: string }> = ({ 
-    value, 
-    title,
-    description 
-  }) => {
-    const color = value >= 80 ? 'success' : value >= 50 ? 'warning' : 'error';
-    
+  if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center',
-        p: 2 
-      }}>
-        <Tooltip title={description || ''} arrow>
-          <Typography variant="subtitle1" gutterBottom align="center" sx={{ minHeight: '48px' }}>
-            {title}
-          </Typography>
-        </Tooltip>
-        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-          <CircularProgress
-            variant="determinate"
-            value={value}
-            size={80}
-            color={color}
-          />
-          <Box sx={{
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Typography variant="caption" component="div" color="text.secondary">
-              {`${value}%`}
-            </Typography>
-          </Box>
-        </Box>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
       </Box>
-    );
-  };
-
-  if (error) {
-    return (
-      <Typography color="error" align="center">
-        {error}
-      </Typography>
     );
   }
 
-  const overallPerformance = calculateOverallPerformance();
+  if (error) {
+    return (
+      <Box sx={{ padding: 3 }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <Box sx={{ padding: 3 }}>
+        <Typography>No statistics available</Typography>
+      </Box>
+    );
+  }
+
+  const statCards = [
+    { title: 'Total Rules', value: stats.totalRules, color: theme.palette.custom.lightBlue },
+    { title: 'Days Tracked', value: stats.totalDays, color: theme.palette.custom.beige },
+    { 
+      title: 'Overall Completion', 
+      value: `${Math.round(stats.completionRate)}%`,
+      subtext: `${stats.totalTicks}/${stats.totalPossibleTicks}`,
+      color: theme.palette.custom.orange 
+    },
+    { title: 'Current Streak', value: stats.streakCount, color: theme.palette.custom.purple }
+  ];
+
+  // Sort the rules by completion rate in descending order
+  const sortedRules = [...stats.ruleProgress].sort((a, b) => b.completionRate - a.completionRate);
 
   return (
-    <Paper elevation={3} sx={{ p: 3, maxWidth: 1200, margin: '0 auto' }}>
-      <Typography variant="h5" gutterBottom align="center" sx={{ mb: 4 }}>
-        Performance Statistics
-      </Typography>
-
-      {/* Overall Performance */}
-      <Box sx={{ mb: 4 }}>
-        <PerformanceDial
-          value={overallPerformance}
-          title="Overall Performance"
-          description="Average performance across all active rules"
-        />
-      </Box>
-
-      {/* Individual Rule Performance */}
-      <Grid container spacing={3} justifyContent="center">
-        {rules.map(rule => (
-          <Grid item xs={12} sm={6} md={4} key={rule._id}>
-            <PerformanceDial
-              value={calculateRulePerformance(rule.number)}
-              title={rule.name}
-              description={rule.description}
+    <Box sx={{ p: 2, maxWidth: '100%' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+          Your Progress
+        </Typography>
+        <Tabs 
+          value={selectedPeriod} 
+          onChange={handlePeriodChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            minHeight: 'unset',
+            '& .MuiTabs-indicator': {
+              height: 3,
+              backgroundColor: theme.palette.custom.orange,
+            },
+            '& .MuiTab-root': {
+              minHeight: 'unset',
+              py: 1,
+              px: 2,
+            }
+          }}
+        >
+          {periods.map((period, index) => (
+            <Tab 
+              key={period.value} 
+              label={period.label}
+              sx={{
+                fontSize: '0.875rem',
+                fontWeight: selectedPeriod === index ? 700 : 400,
+              }}
             />
+          ))}
+        </Tabs>
+      </Box>
+      
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {statCards.map((card, index) => (
+          <Grid item xs={6} sm={3} key={card.title}>
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 2, 
+                textAlign: 'center',
+                backgroundColor: card.color,
+                color: '#000000',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                {card.title}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                {card.value}
+              </Typography>
+              {card.subtext && (
+                <Typography variant="caption" sx={{ mt: 0.5, opacity: 0.7 }}>
+                  {card.subtext}
+                </Typography>
+              )}
+            </Paper>
           </Grid>
         ))}
       </Grid>
-    </Paper>
+
+      <Paper elevation={0} sx={{ p: 2, backgroundColor: theme.palette.custom.beige }}>
+        <Typography variant="subtitle1" sx={{ 
+          mb: 2,
+          fontWeight: 700,
+          letterSpacing: '-0.01em'
+        }}>
+          Rule Progress
+        </Typography>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Rule</TableCell>
+                <TableCell sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Progress</TableCell>
+                <TableCell align="right" sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Rate</TableCell>
+                <TableCell align="right" sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Days</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sortedRules.map((rule) => (
+                <TableRow key={rule.ruleNumber}>
+                  <TableCell sx={{ py: 1, fontSize: '0.75rem', borderBottom: 'none' }}>{rule.ruleName}</TableCell>
+                  <TableCell sx={{ py: 1, width: '40%', borderBottom: 'none' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ width: '100%', mr: 1 }}>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={rule.completionRate} 
+                          sx={{ 
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: theme.palette.custom.beige,
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: theme.palette.custom.orange,
+                              borderRadius: 3,
+                            }
+                          }}
+                        />
+                      </Box>
+                      <Box sx={{ minWidth: 30 }}>
+                        <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                          {`${Math.round(rule.completionRate)}%`}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right" sx={{ py: 1, fontSize: '0.75rem', borderBottom: 'none' }}>{`${Math.round(rule.completionRate)}%`}</TableCell>
+                  <TableCell align="right" sx={{ py: 1, fontSize: '0.75rem', borderBottom: 'none' }}>{rule.totalTicks}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
   );
 };
 

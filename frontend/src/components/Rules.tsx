@@ -16,7 +16,9 @@ import {
   DialogActions,
   Typography,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Box,
+  useTheme
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -40,6 +42,7 @@ interface ApiError {
 }
 
 const Rules: React.FC = () => {
+  const theme = useTheme();
   const [rules, setRules] = useState<Rule[]>([]);
   const [open, setOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
@@ -139,48 +142,137 @@ const Rules: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <Typography variant="h5">Rules Configuration</Typography>
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      width: '100%',
+      p: 2,
+      gap: 2
+    }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: '1000px'
+      }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+          Rules Configuration
+        </Typography>
         <Button
           variant="contained"
-          color="primary"
           onClick={() => handleOpen()}
+          sx={{
+            backgroundColor: theme.palette.custom.orange,
+            color: '#000000',
+            fontWeight: 600,
+            '&:hover': {
+              backgroundColor: '#D66A2C',
+            }
+          }}
         >
           Add New Rule
         </Button>
-      </div>
+      </Box>
 
       {error && (
-        <Typography color="error" style={{ marginBottom: '10px' }}>
+        <Typography color="error" sx={{ width: '100%', maxWidth: '1000px', mb: 1 }}>
           {error}
         </Typography>
       )}
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{
+        width: '100%',
+        maxWidth: '1000px',
+        backgroundColor: theme.palette.custom.beige,
+        borderRadius: 2,
+        overflow: 'hidden',
+        boxShadow: 'none'
+      }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Number</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{
+                backgroundColor: theme.palette.custom.purple,
+                color: '#000000',
+                fontWeight: 600,
+                fontSize: '0.875rem'
+              }}>Number</TableCell>
+              <TableCell sx={{
+                backgroundColor: theme.palette.custom.purple,
+                color: '#000000',
+                fontWeight: 600,
+                fontSize: '0.875rem'
+              }}>Name</TableCell>
+              <TableCell sx={{
+                backgroundColor: theme.palette.custom.purple,
+                color: '#000000',
+                fontWeight: 600,
+                fontSize: '0.875rem'
+              }}>Description</TableCell>
+              <TableCell sx={{
+                backgroundColor: theme.palette.custom.purple,
+                color: '#000000',
+                fontWeight: 600,
+                fontSize: '0.875rem'
+              }}>Status</TableCell>
+              <TableCell sx={{
+                backgroundColor: theme.palette.custom.purple,
+                color: '#000000',
+                fontWeight: 600,
+                fontSize: '0.875rem'
+              }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {rules.map((rule) => (
-              <TableRow key={rule._id}>
-                <TableCell>{rule.number}</TableCell>
-                <TableCell>{rule.name}</TableCell>
-                <TableCell>{rule.description}</TableCell>
-                <TableCell>{rule.active ? 'Active' : 'Inactive'}</TableCell>
+            {rules.map((rule, index) => (
+              <TableRow 
+                key={rule._id}
+                sx={{
+                  backgroundColor: 'white',
+                  '&:hover': {
+                    backgroundColor: theme.palette.custom.beige,
+                  }
+                }}
+              >
+                <TableCell sx={{ fontSize: '0.875rem' }}>{rule.number}</TableCell>
+                <TableCell sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{rule.name}</TableCell>
+                <TableCell sx={{ fontSize: '0.875rem' }}>{rule.description}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleOpen(rule)} size="small">
-                    <EditIcon />
+                  <Box sx={{
+                    backgroundColor: rule.active ? '#C8E6C9' : '#FFCDD2',
+                    color: rule.active ? '#388E3C' : '#D32F2F',
+                    borderRadius: '12px',
+                    px: 2,
+                    py: 0.5,
+                    display: 'inline-block',
+                    fontSize: '0.75rem',
+                    fontWeight: 600
+                  }}>
+                    {rule.active ? 'Active' : 'Inactive'}
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <IconButton 
+                    onClick={() => handleOpen(rule)} 
+                    size="small"
+                    sx={{ 
+                      color: theme.palette.custom.orange,
+                      '&:hover': { backgroundColor: 'rgba(232, 124, 62, 0.1)' }
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(rule._id)} size="small">
-                    <DeleteIcon />
+                  <IconButton 
+                    onClick={() => handleDelete(rule._id)} 
+                    size="small"
+                    sx={{ 
+                      color: '#D32F2F',
+                      '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.1)' }
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -189,9 +281,25 @@ const Rules: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>{editingRule?._id ? 'Edit Rule' : 'Add New Rule'}</DialogTitle>
-        <DialogContent>
+      <Dialog 
+        open={open} 
+        onClose={handleClose}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            backgroundColor: theme.palette.custom.beige
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          fontWeight: 700, 
+          letterSpacing: '-0.02em',
+          backgroundColor: theme.palette.custom.purple,
+          color: '#000000'
+        }}>
+          {editingRule?._id ? 'Edit Rule' : 'Add New Rule'}
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
           <TextField
             autoFocus
             margin="dense"
@@ -200,6 +308,7 @@ const Rules: React.FC = () => {
             fullWidth
             value={editingRule?.number || ''}
             onChange={(e) => setEditingRule(prev => prev ? {...prev, number: parseInt(e.target.value)} : null)}
+            sx={{ mb: 2 }}
           />
           <TextField
             margin="dense"
@@ -209,6 +318,7 @@ const Rules: React.FC = () => {
             required
             value={editingRule?.name || ''}
             onChange={(e) => setEditingRule(prev => prev ? {...prev, name: e.target.value} : null)}
+            sx={{ mb: 2 }}
           />
           <TextField
             margin="dense"
@@ -219,6 +329,7 @@ const Rules: React.FC = () => {
             rows={2}
             value={editingRule?.description || ''}
             onChange={(e) => setEditingRule(prev => prev ? {...prev, description: e.target.value} : null)}
+            sx={{ mb: 2 }}
           />
           <FormControlLabel
             control={
@@ -229,15 +340,35 @@ const Rules: React.FC = () => {
               />
             }
             label="Active"
-            style={{ marginTop: '10px' }}
+            sx={{ mt: 1 }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSave} color="primary">Save</Button>
+        <DialogActions sx={{ p: 2, backgroundColor: theme.palette.custom.beige }}>
+          <Button 
+            onClick={handleClose}
+            sx={{ 
+              color: '#000000',
+              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.1)' }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            sx={{
+              backgroundColor: theme.palette.custom.orange,
+              color: '#000000',
+              fontWeight: 600,
+              '&:hover': {
+                backgroundColor: '#D66A2C',
+              }
+            }}
+          >
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 };
 

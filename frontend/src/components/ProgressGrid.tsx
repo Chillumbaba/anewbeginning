@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Paper, Typography, Box, Tooltip, IconButton } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import { useTheme } from '@mui/material/styles';
 import api from '../services/api';
 
 interface GridCell {
@@ -19,6 +20,7 @@ interface Rule {
 }
 
 const ProgressGrid = () => {
+  const theme = useTheme();
   const [gridData, setGridData] = useState<GridCell[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -104,20 +106,30 @@ const ProgressGrid = () => {
         size="small"
         onClick={() => handleCellClick(date, rule)}
         sx={{
-          width: '40px',
-          height: '40px',
+          width: '36px',
+          height: '36px',
           padding: 0,
-          backgroundColor: '#f8f9fa',
-          border: '1px solid #dee2e6',
+          backgroundColor: status === 'tick' 
+            ? '#C8E6C9' // More subtle green for ticks
+            : status === 'cross'
+            ? '#FFCDD2' // More subtle red for crosses
+            : theme.palette.custom.lightBlue, // Default color
+          border: 'none',
           borderRadius: '4px',
           '&:hover': { 
-            backgroundColor: '#e9ecef',
-            borderColor: '#ced4da'
+            backgroundColor: status === 'tick'
+              ? '#A5D6A7' // Darker but still subtle green on hover
+              : status === 'cross'
+              ? '#EF9A9A' // Darker but still subtle red on hover
+              : theme.palette.custom.beige, // Default hover
+          },
+          '& .MuiSvgIcon-root': {
+            fontSize: '1rem',
           }
         }}
       >
-        {status === 'tick' && <CheckIcon fontSize="small" color="success" />}
-        {status === 'cross' && <CloseIcon fontSize="small" color="error" />}
+        {status === 'tick' && <CheckIcon fontSize="small" sx={{ color: '#388E3C' }} />}
+        {status === 'cross' && <CloseIcon fontSize="small" sx={{ color: '#D32F2F' }} />}
       </IconButton>
     );
   };
@@ -126,25 +138,33 @@ const ProgressGrid = () => {
     const typographyStyles = {
       writingMode: 'vertical-rl',
       transform: 'rotate(180deg)',
-      height: '60px',
-      fontSize: '0.75rem',
+      height: '120px',
+      fontSize: '0.875rem',
+      fontWeight: 600,
       textAlign: 'center',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
       cursor: rule.description ? 'help' : 'default',
-      padding: '4px'
+      padding: '8px 4px',
+      color: '#FFFFFF',
+    };
+
+    const boxStyles = {
+      backgroundColor: '#000000',
+      border: 'none',
+      borderRadius: '4px',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: '48px',
     };
 
     if (rule.description) {
       return (
         <Tooltip arrow title={rule.description} placement="top">
-          <Box component="div" sx={{
-            backgroundColor: '#f8f9fa',
-            border: '1px solid #dee2e6',
-            borderRadius: '4px',
-            height: '100%'
-          }}>
+          <Box component="div" sx={boxStyles}>
             <Typography sx={typographyStyles}>
               {rule.name}
             </Typography>
@@ -154,12 +174,7 @@ const ProgressGrid = () => {
     }
 
     return (
-      <Box sx={{
-        backgroundColor: '#f8f9fa',
-        border: '1px solid #dee2e6',
-        borderRadius: '4px',
-        height: '100%'
-      }}>
+      <Box sx={boxStyles}>
         <Typography sx={typographyStyles}>
           {rule.name}
         </Typography>
@@ -168,58 +183,96 @@ const ProgressGrid = () => {
   };
 
   return (
-    <Paper elevation={2} sx={{ padding: '20px', maxWidth: 'fit-content', margin: '0 auto' }}>
-      <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', color: '#2c3e50', marginBottom: '20px' }}>
-        Progress Grid
-      </Typography>
+    <Box sx={{ 
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      width: '100%',
+      mt: 0,
+      p: 0
+    }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        mb: 2,
+        width: '100%',
+        justifyContent: 'center'
+      }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+          Progress Grid
+        </Typography>
+      </Box>
+      
       {error && (
-        <Typography color="error" gutterBottom>
+        <Typography color="error" sx={{ mb: 2 }}>
           {error}
         </Typography>
       )}
       
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: `100px repeat(${rules.length}, 40px)`, 
-        gap: '8px',
-        backgroundColor: '#ffffff',
-        padding: '16px',
-        borderRadius: '8px'
+      <Paper elevation={0} sx={{ 
+        p: 1,
+        backgroundColor: theme.palette.custom.beige,
+        overflowX: 'auto',
+        width: 'fit-content'
       }}>
-        {/* Header row with rule names */}
-        <Box sx={{ gridColumn: '1', height: '60px' }} />
-        {rules.map(rule => (
-          <Box key={rule.number} sx={{ height: '60px' }}>
-            {renderRuleHeader(rule)}
-          </Box>
-        ))}
-
-        {/* Date rows with cells */}
-        {dates.map((date, index) => (
-          <React.Fragment key={date}>
-            <Box sx={{ 
-              gridColumn: '1',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '8px',
-              backgroundColor: '#f8f9fa',
-              border: '1px solid #dee2e6',
-              borderRadius: '4px',
-              fontWeight: index === 0 ? 'bold' : 'normal',
-              color: '#2c3e50'
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: `100px repeat(${rules.length}, 48px)`,
+          gap: '8px',
+          minWidth: 'fit-content'
+        }}>
+          {/* Header row with rule names */}
+          <Box sx={{ 
+            gridColumn: '1', 
+            height: '120px',
+            backgroundColor: '#000000',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Typography sx={{ 
+              color: '#FFFFFF',
+              fontSize: '0.875rem',
+              fontWeight: 600
             }}>
-              {index === 0 ? 'Today' : index === 1 ? 'Yesterday' : date}
+              Date
+            </Typography>
+          </Box>
+          {rules.map(rule => (
+            <Box key={rule.number} sx={{ height: '120px' }}>
+              {renderRuleHeader(rule)}
             </Box>
-            {rules.map(rule => (
-              <Box key={`${date}-${rule.number}`}>
-                {renderCell(date, rule.number)}
+          ))}
+
+          {/* Date rows with cells */}
+          {dates.map((date, index) => (
+            <React.Fragment key={date}>
+              <Box sx={{ 
+                gridColumn: '1',
+                fontSize: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px 8px',
+                backgroundColor: '#000000',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: index === 0 ? 700 : 400,
+                color: '#FFFFFF',
+                height: '36px'
+              }}>
+                {index === 0 ? 'Today' : index === 1 ? 'Yesterday' : date}
               </Box>
-            ))}
-          </React.Fragment>
-        ))}
-      </Box>
-    </Paper>
+              {rules.map(rule => (
+                <Box key={`${date}-${rule.number}`}>
+                  {renderCell(date, rule.number)}
+                </Box>
+              ))}
+            </React.Fragment>
+          ))}
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
