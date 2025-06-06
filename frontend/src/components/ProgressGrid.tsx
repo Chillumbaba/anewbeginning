@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Paper, Typography, Box, Tooltip, IconButton } from '@mui/material';
+import { Paper, Typography, Box, Tooltip, IconButton, useMediaQuery } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTheme } from '@mui/material/styles';
@@ -21,13 +21,14 @@ interface Rule {
 
 const ProgressGrid = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery('(max-width:768px)');
   const [gridData, setGridData] = useState<GridCell[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const getDates = () => {
     const dates = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < (isMobile ? 7 : 10); i++) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       dates.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }));
@@ -106,25 +107,25 @@ const ProgressGrid = () => {
         size="small"
         onClick={() => handleCellClick(date, rule)}
         sx={{
-          width: '36px',
-          height: '36px',
+          width: isMobile ? '28px' : '32px',
+          height: isMobile ? '28px' : '32px',
           padding: 0,
           backgroundColor: status === 'tick' 
-            ? '#C8E6C9' // More subtle green for ticks
+            ? '#C8E6C9'
             : status === 'cross'
-            ? '#FFCDD2' // More subtle red for crosses
-            : theme.palette.custom.lightBlue, // Default color
+            ? '#FFCDD2'
+            : theme.palette.custom.lightBlue,
           border: 'none',
           borderRadius: '4px',
           '&:hover': { 
             backgroundColor: status === 'tick'
-              ? '#A5D6A7' // Darker but still subtle green on hover
+              ? '#A5D6A7'
               : status === 'cross'
-              ? '#EF9A9A' // Darker but still subtle red on hover
-              : theme.palette.custom.beige, // Default hover
+              ? '#EF9A9A'
+              : theme.palette.custom.beige,
           },
           '& .MuiSvgIcon-root': {
-            fontSize: '1rem',
+            fontSize: isMobile ? '0.75rem' : '0.875rem',
           }
         }}
       >
@@ -138,15 +139,15 @@ const ProgressGrid = () => {
     const typographyStyles = {
       writingMode: 'vertical-rl',
       transform: 'rotate(180deg)',
-      height: '120px',
-      fontSize: '0.875rem',
+      height: isMobile ? '90px' : '100px',
+      fontSize: isMobile ? '0.675rem' : '0.75rem',
       fontWeight: 600,
       textAlign: 'center',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
       cursor: rule.description ? 'help' : 'default',
-      padding: '8px 4px',
+      padding: isMobile ? '2px 1px' : '4px 2px',
       color: '#FFFFFF',
     };
 
@@ -158,7 +159,7 @@ const ProgressGrid = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      minWidth: '48px',
+      minWidth: isMobile ? '36px' : '40px',
     };
 
     if (rule.description) {
@@ -185,46 +186,27 @@ const ProgressGrid = () => {
   return (
     <Box sx={{ 
       display: 'flex',
-      flexDirection: 'column',
+      justifyContent: 'center',
       alignItems: 'center',
       width: '100%',
-      mt: 0,
-      p: 0
+      overflowX: 'auto'
     }}>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        mb: 2,
-        width: '100%',
-        justifyContent: 'center'
-      }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Progress Grid
-        </Typography>
-      </Box>
-      
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-      )}
-      
       <Paper elevation={0} sx={{ 
-        p: 1,
         backgroundColor: theme.palette.custom.beige,
-        overflowX: 'auto',
-        width: 'fit-content'
+        borderRadius: 2,
+        minWidth: isMobile ? 'auto' : 'fit-content',
+        p: 1
       }}>
         <Box sx={{ 
           display: 'grid', 
-          gridTemplateColumns: `100px repeat(${rules.length}, 48px)`,
-          gap: '8px',
+          gridTemplateColumns: `${isMobile ? '70px' : '80px'} repeat(${rules.length}, ${isMobile ? '36px' : '40px'})`,
+          gap: isMobile ? '2px' : '4px',
           minWidth: 'fit-content'
         }}>
           {/* Header row with rule names */}
           <Box sx={{ 
             gridColumn: '1', 
-            height: '120px',
+            height: isMobile ? '90px' : '100px',
             backgroundColor: '#000000',
             borderRadius: '4px',
             display: 'flex',
@@ -233,14 +215,14 @@ const ProgressGrid = () => {
           }}>
             <Typography sx={{ 
               color: '#FFFFFF',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
               fontWeight: 600
             }}>
               Date
             </Typography>
           </Box>
           {rules.map(rule => (
-            <Box key={rule.number} sx={{ height: '120px' }}>
+            <Box key={rule.number} sx={{ height: isMobile ? '100px' : '120px' }}>
               {renderRuleHeader(rule)}
             </Box>
           ))}
@@ -250,16 +232,16 @@ const ProgressGrid = () => {
             <React.Fragment key={date}>
               <Box sx={{ 
                 gridColumn: '1',
-                fontSize: '0.75rem',
+                fontSize: isMobile ? '0.625rem' : '0.675rem',
                 display: 'flex',
                 alignItems: 'center',
-                padding: '4px 8px',
+                padding: isMobile ? '1px 2px' : '2px 4px',
                 backgroundColor: '#000000',
                 border: 'none',
                 borderRadius: '4px',
                 fontWeight: index === 0 ? 700 : 400,
                 color: '#FFFFFF',
-                height: '36px'
+                height: isMobile ? '28px' : '32px'
               }}>
                 {index === 0 ? 'Today' : index === 1 ? 'Yesterday' : date}
               </Box>
