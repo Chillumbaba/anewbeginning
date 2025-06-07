@@ -5,6 +5,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useTheme } from '@mui/material/styles';
 import api from '../services/api';
+import BenjaminFranklinImage from '../assets/benjamin-franklin.png';
 
 interface GridCell {
   date: string;
@@ -218,7 +219,7 @@ const ProgressGrid = () => {
           }}>
             <Box
               component="img"
-              src="/images/benjamin-franklin.png"
+              src={BenjaminFranklinImage}
               alt="Benjamin Franklin Portrait"
               sx={{
                 width: '85%',
