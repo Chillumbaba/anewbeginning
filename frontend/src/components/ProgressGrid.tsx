@@ -210,20 +210,24 @@ const ProgressGrid = () => {
             height: isMobile ? '100px' : '120px',
             backgroundColor: theme.palette.custom.orange,
             borderRadius: '4px',
+            position: 'relative',
+            overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1
+            justifyContent: 'center'
           }}>
-            <Typography sx={{ 
-              color: '#000000',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              fontWeight: 600
-            }}>
-              Date
-            </Typography>
-            <KeyboardArrowDownIcon sx={{ color: '#000000' }} />
+            <Box
+              component="img"
+              src="/images/benjamin-franklin.png"
+              alt="Benjamin Franklin Portrait"
+              sx={{
+                width: '85%',
+                height: '85%',
+                objectFit: 'contain',
+                filter: 'grayscale(100%) contrast(1000%) brightness(1000%)',
+                mixBlendMode: 'darken'
+              }}
+            />
           </Box>
           {rules.map(rule => (
             <Box key={rule.number} sx={{ height: isMobile ? '100px' : '120px' }}>
