@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
     const period = (req.query.period as string) || 'forever';
     console.log('Period:', period);
     const startDate = getStartDate(period);
-    console.log('Start date:', startDate);
+    console.log('Start date:', startDate.toISOString());
 
     // Get all active rules
     const activeRules = await Rule.find({ active: true });
@@ -53,38 +53,72 @@ router.get('/', async (req, res) => {
 
     // Filter dates within the selected period
     const today = new Date();
-    const filteredDates = [...new Set(gridData.map(data => {
-      const [day, month] = data.date.split('/').map(Number);
-      const date = new Date(today.getFullYear(), month - 1, day);
-      return date >= startDate ? data.date : null;
-    }))].filter(Boolean) as string[];
+    today.setHours(23, 59, 59, 999); // End of today
+    console.log('Today (end of day):', today.toISOString());
 
-    console.log('Filtered dates:', filteredDates.length);
-    const totalDays = filteredDates.length;
-
-    // Calculate completion rate (treating blanks as crosses)
-    const totalTicks = gridData
-      .filter(data => {
-        const [day, month] = data.date.split('/').map(Number);
+    // Get all unique dates from grid data
+    const uniqueDates = [...new Set(gridData.map(data => data.date))];
+    
+    // Filter and sort dates within the period
+    const filteredDates = uniqueDates
+      .filter(dateStr => {
+        const [day, month] = dateStr.split('/').map(Number);
         const date = new Date(today.getFullYear(), month - 1, day);
-        return date >= startDate;
+        date.setHours(12, 0, 0, 0); // Noon to avoid timezone issues
+        return date >= startDate && date <= today;
       })
-      .filter(data => data.status === 'tick').length;
+      .sort((a, b) => {
+        const [dayA, monthA] = a.split('/').map(Number);
+        const [dayB, monthB] = b.split('/').map(Number);
+        const dateA = new Date(today.getFullYear(), monthA - 1, dayA);
+        const dateB = new Date(today.getFullYear(), monthB - 1, dayB);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+    console.log('Filtered dates:', filteredDates);
+    const totalDays = filteredDates.length;
+    console.log('Total days:', totalDays);
+
+    // Calculate completion rate
+    let totalTicks = 0;
+    const totalPossibleTicks = totalDays * totalRules;
+
+    // For each date in the filtered period
+    filteredDates.forEach(date => {
+      // For each active rule
+      activeRules.forEach(rule => {
+        // Check if there's a tick for this rule on this date
+        const hasTick = gridData.some(data => 
+          data.date === date && 
+          data.rule === rule.number && 
+          data.status === 'tick'
+        );
+        if (hasTick) {
+          totalTicks++;
+        }
+      });
+    });
 
     console.log('Total ticks:', totalTicks);
-    const totalPossibleTicks = totalRules * totalDays;
+    console.log('Total possible ticks:', totalPossibleTicks);
     const completionRate = totalPossibleTicks > 0 
       ? (totalTicks / totalPossibleTicks) * 100 
       : 0;
+    console.log('Completion rate:', completionRate);
 
     // Calculate rule-specific progress
     const ruleProgress = await Promise.all(activeRules.map(async (rule) => {
-      const ruleTicks = gridData
-        .filter(data => {
-          const [day, month] = data.date.split('/').map(Number);
-          const date = new Date(today.getFullYear(), month - 1, day);
-          return date >= startDate && data.rule === rule.number && data.status === 'tick';
-        }).length;
+      let ruleTicks = 0;
+      filteredDates.forEach(date => {
+        const hasTick = gridData.some(data => 
+          data.date === date && 
+          data.rule === rule.number && 
+          data.status === 'tick'
+        );
+        if (hasTick) {
+          ruleTicks++;
+        }
+      });
 
       const ruleCompletionRate = totalDays > 0 ? (ruleTicks / totalDays) * 100 : 0;
 

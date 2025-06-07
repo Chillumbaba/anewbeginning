@@ -49,24 +49,10 @@ const Home: React.FC = () => {
     try {
       await api.post('/api/test-db/reset');
       setSuccess('Database reset successful');
+      fetchTexts(); // Refresh the texts after reset
     } catch (err) {
       setError('Failed to reset database');
       console.error('Error resetting database:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePopulate = async () => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const response = await api.post('/api/test-db/populate');
-      setSuccess(`Test data populated successfully: ${JSON.stringify(response.data.summary)}`);
-    } catch (err) {
-      setError('Failed to populate test data');
-      console.error('Error populating test data:', err);
     } finally {
       setLoading(false);
     }
@@ -76,11 +62,11 @@ const Home: React.FC = () => {
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
       <Paper sx={{ p: 3, backgroundColor: theme => theme.palette.custom.lightBlue }}>
         <Typography variant="h4" gutterBottom>
-          Test Database Controls
+          Database Controls
         </Typography>
         
         <Typography variant="body1" sx={{ mb: 3 }}>
-          Use these controls to manage test data in the database. Be careful as these actions cannot be undone.
+          Use this control to reset the database. Be careful as this action cannot be undone.
         </Typography>
 
         {error && (
@@ -110,25 +96,10 @@ const Home: React.FC = () => {
           >
             {loading ? <CircularProgress size={24} /> : 'Reset Database'}
           </Button>
-
-          <Button
-            variant="contained"
-            onClick={handlePopulate}
-            disabled={loading}
-            sx={{
-              backgroundColor: theme => theme.palette.custom.purple,
-              '&:hover': {
-                backgroundColor: theme => theme.palette.custom.purple,
-                opacity: 0.9,
-              },
-            }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Populate Test Data'}
-          </Button>
         </Box>
       </Paper>
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '20px', marginTop: '20px' }}>
         <input
           type="text"
           value={inputText}
