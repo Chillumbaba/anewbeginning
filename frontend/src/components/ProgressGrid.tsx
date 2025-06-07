@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Paper, Typography, Box, Tooltip, IconButton, useMediaQuery } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useTheme } from '@mui/material/styles';
 import api from '../services/api';
 
@@ -116,7 +117,7 @@ const ProgressGrid = () => {
             ? '#FFCDD2'
             : theme.palette.custom.lightBlue,
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: 0,
           '&:hover': { 
             backgroundColor: status === 'tick'
               ? '#A5D6A7'
@@ -154,7 +155,7 @@ const ProgressGrid = () => {
     const boxStyles = {
       backgroundColor: '#000000',
       border: 'none',
-      borderRadius: '4px',
+      borderRadius: 0,
       height: '100%',
       display: 'flex',
       alignItems: 'center',
@@ -206,20 +207,23 @@ const ProgressGrid = () => {
           {/* Header row with rule names */}
           <Box sx={{ 
             gridColumn: '1', 
-            height: isMobile ? '90px' : '100px',
-            backgroundColor: '#000000',
+            height: isMobile ? '100px' : '120px',
+            backgroundColor: theme.palette.custom.orange,
             borderRadius: '4px',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            gap: 1
           }}>
             <Typography sx={{ 
-              color: '#FFFFFF',
+              color: '#000000',
               fontSize: isMobile ? '0.75rem' : '0.875rem',
               fontWeight: 600
             }}>
               Date
             </Typography>
+            <KeyboardArrowDownIcon sx={{ color: '#000000' }} />
           </Box>
           {rules.map(rule => (
             <Box key={rule.number} sx={{ height: isMobile ? '100px' : '120px' }}>
@@ -238,7 +242,7 @@ const ProgressGrid = () => {
                 padding: isMobile ? '1px 2px' : '2px 4px',
                 backgroundColor: '#000000',
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: 0,
                 fontWeight: index === 0 ? 700 : 400,
                 color: '#FFFFFF',
                 height: isMobile ? '28px' : '32px'
