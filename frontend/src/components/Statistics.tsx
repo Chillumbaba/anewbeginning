@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Grid, CircularProgress, Tabs, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, LinearProgress } from '@mui/material';
+import { Box, Typography, Paper, Grid, CircularProgress, Tabs, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, LinearProgress, Select, MenuItem, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import api from '../services/api';
 
@@ -32,6 +32,7 @@ const periods = [
 
 const Statistics: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery('(max-width:768px)');
   const [stats, setStats] = useState<StatisticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,8 +56,9 @@ const Statistics: React.FC = () => {
     }
   };
 
-  const handlePeriodChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setSelectedPeriod(newValue);
+  const handlePeriodChange = (event: any) => {
+    const newValue = isMobile ? event.target.value : event;
+    setSelectedPeriod(typeof newValue === 'number' ? newValue : parseInt(newValue));
   };
 
   if (loading) {
@@ -100,40 +102,80 @@ const Statistics: React.FC = () => {
 
   return (
     <Box sx={{ p: 2, maxWidth: '100%' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        mb: 2,
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 2 : 0
+      }}>
+        <Typography variant="h5" sx={{ 
+          fontWeight: 700, 
+          letterSpacing: '-0.02em',
+          fontSize: isMobile ? '1.25rem' : '1.5rem'
+        }}>
           Your Progress
         </Typography>
-        <Tabs 
-          value={selectedPeriod} 
-          onChange={handlePeriodChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-          sx={{
-            minHeight: 'unset',
-            '& .MuiTabs-indicator': {
-              height: 3,
-              backgroundColor: theme.palette.custom.orange,
-            },
-            '& .MuiTab-root': {
+        {isMobile ? (
+          <Select
+            value={selectedPeriod}
+            onChange={handlePeriodChange}
+            sx={{
+              width: '100%',
+              backgroundColor: theme.palette.custom.beige,
+              '.MuiOutlinedInput-notchedOutline': { border: 'none' },
+              borderRadius: 2,
+              '& .MuiSelect-select': {
+                py: 1.5,
+                fontWeight: 600,
+              }
+            }}
+          >
+            {periods.map((period, index) => (
+              <MenuItem 
+                key={period.value} 
+                value={index}
+                sx={{
+                  fontWeight: selectedPeriod === index ? 700 : 400,
+                }}
+              >
+                {period.label}
+              </MenuItem>
+            ))}
+          </Select>
+        ) : (
+          <Tabs 
+            value={selectedPeriod} 
+            onChange={(_event, value) => handlePeriodChange(value)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
               minHeight: 'unset',
-              py: 1,
-              px: 2,
-            }
-          }}
-        >
-          {periods.map((period, index) => (
-            <Tab 
-              key={period.value} 
-              label={period.label}
-              sx={{
-                fontSize: '0.875rem',
-                fontWeight: selectedPeriod === index ? 700 : 400,
-              }}
-            />
-          ))}
-        </Tabs>
+              '& .MuiTabs-indicator': {
+                height: 3,
+                backgroundColor: theme.palette.custom.orange,
+              },
+              '& .MuiTab-root': {
+                minHeight: 'unset',
+                py: 1,
+                px: 2,
+              }
+            }}
+          >
+            {periods.map((period, index) => (
+              <Tab 
+                key={period.value} 
+                label={period.label}
+                sx={{
+                  fontSize: '0.875rem',
+                  fontWeight: selectedPeriod === index ? 700 : 400,
+                }}
+              />
+            ))}
+          </Tabs>
+        )}
       </Box>
       
       <Grid container spacing={2} sx={{ mb: 2 }}>
