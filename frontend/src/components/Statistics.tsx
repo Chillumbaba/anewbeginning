@@ -27,7 +27,7 @@ const periods = [
   { label: '3 Months', value: '3months' },
   { label: '6 Months', value: '6months' },
   { label: '1 Year', value: '1year' },
-  { label: 'Forever', value: 'forever' }
+  { label: 'From the Start', value: 'forever' }
 ];
 
 const Statistics: React.FC = () => {
@@ -123,12 +123,16 @@ const Statistics: React.FC = () => {
             onChange={handlePeriodChange}
             sx={{
               width: '100%',
-              backgroundColor: theme.palette.custom.beige,
+              backgroundColor: '#000000',
+              color: '#FFFFFF',
               '.MuiOutlinedInput-notchedOutline': { border: 'none' },
               borderRadius: 2,
               '& .MuiSelect-select': {
                 py: 1.5,
                 fontWeight: 600,
+              },
+              '& .MuiSvgIcon-root': {
+                color: '#FFFFFF',
               }
             }}
           >
@@ -138,6 +142,17 @@ const Statistics: React.FC = () => {
                 value={index}
                 sx={{
                   fontWeight: selectedPeriod === index ? 700 : 400,
+                  backgroundColor: '#000000',
+                  color: '#FFFFFF',
+                  '&:hover': {
+                    backgroundColor: '#333333',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: '#333333',
+                    '&:hover': {
+                      backgroundColor: '#444444',
+                    }
+                  }
                 }}
               >
                 {period.label}
