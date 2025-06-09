@@ -105,7 +105,7 @@ const ProgressGrid = () => {
 
   const handleDownloadCSV = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/grid-data/export-csv', {
+      const response = await fetch(`${api.defaults.baseURL}/api/grid-data/export-csv`, {
         method: 'GET',
         headers: {
           'Accept': 'text/csv',
