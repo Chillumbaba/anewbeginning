@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Paper, Box, Alert, CircularProgress, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from '@mui/material';
+import { Button, Typography, Paper, Box, Alert, CircularProgress, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Input } from '@mui/material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import api from '../services/api';
 
 interface Text {
@@ -94,6 +95,42 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const csvData = e.target?.result;
+        if (typeof csvData === 'string') {
+          try {
+            const response = await api.post('/api/grid-data/upload-csv', csvData, {
+              headers: {
+                'Content-Type': 'text/csv'
+              }
+            });
+            setSuccess(`CSV data imported successfully: ${response.data.count} records imported`);
+          } catch (err) {
+            setError('Failed to import CSV data');
+            console.error('Error importing CSV:', err);
+          } finally {
+            setLoading(false);
+          }
+        }
+      };
+      reader.readAsText(file);
+    } catch (err) {
+      setError('Failed to read CSV file');
+      console.error('Error reading file:', err);
+      setLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
       <Paper sx={{ p: 3, backgroundColor: theme.palette.custom.lightBlue }}>
@@ -117,7 +154,7 @@ const Home: React.FC = () => {
           </Alert>
         )}
 
-        <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <Button
               variant="contained"
@@ -159,6 +196,35 @@ const Home: React.FC = () => {
             </Button>
             <Typography variant="body2" sx={{ color: '#666' }}>
               Removes all ticks and crosses from the grid
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<CloudUploadIcon />}
+              disabled={loading}
+              sx={{
+                backgroundColor: theme.palette.custom.beige,
+                color: '#000000',
+                fontWeight: 600,
+                '&:hover': {
+                  backgroundColor: theme.palette.custom.beige,
+                  opacity: 0.9,
+                },
+              }}
+            >
+              Upload Grid Data CSV
+              <input
+                type="file"
+                accept=".csv"
+                hidden
+                onChange={handleFileUpload}
+              />
+            </Button>
+            <Typography variant="body2" sx={{ color: '#666' }}>
+              Import grid data from a CSV file (will replace existing data)
             </Typography>
           </Box>
         </Box>

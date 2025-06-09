@@ -1,6 +1,8 @@
 import express from 'express';
 import { GridData } from '../models/GridData';
 import { Rule } from '../models/Rule';
+import { Parser } from 'json2csv';
+import { parse } from 'csv-parse';
 
 const router = express.Router();
 
@@ -169,6 +171,57 @@ router.delete('/clear-all', async (req, res) => {
       message: 'Error clearing grid data',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+// Upload CSV endpoint
+router.post('/upload-csv', async (req, res) => {
+  try {
+    const csvData = req.body;
+    const records: Array<{ date: string; rule: number; status: string }> = [];
+    
+    // Parse CSV data
+    const parser = parse({
+      columns: true,
+      skip_empty_lines: true
+    });
+
+    parser.on('readable', function() {
+      let record;
+      while ((record = parser.read()) !== null) {
+        records.push({
+          date: record.Date,
+          rule: parseInt(record.RuleNumber),
+          status: record.Status.toLowerCase()
+        });
+      }
+    });
+
+    parser.on('error', function(err: Error) {
+      console.error('Error parsing CSV:', err);
+      res.status(400).json({ error: 'Invalid CSV format' });
+    });
+
+    parser.on('end', async function() {
+      try {
+        // Clear existing data first
+        await GridData.deleteMany({});
+        
+        // Insert new records
+        await GridData.insertMany(records);
+        res.json({ message: 'CSV data imported successfully', count: records.length });
+      } catch (error) {
+        console.error('Error saving CSV data:', error);
+        res.status(500).json({ error: 'Failed to save CSV data' });
+      }
+    });
+
+    // Write data to the parser
+    parser.write(csvData);
+    parser.end();
+  } catch (error) {
+    console.error('Error processing CSV upload:', error);
+    res.status(500).json({ error: 'Failed to process CSV upload' });
   }
 });
 
