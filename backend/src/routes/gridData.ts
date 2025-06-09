@@ -15,55 +15,14 @@ router.get('/export-csv', async (req, res) => {
       Rule.find().sort({ number: 1 }) // Remove the active filter
     ]);
 
-    // Create a map of rule numbers to their names for quick lookup
-    const ruleMap = new Map(rules.map(rule => [rule.number, rule]));
-
     // Create CSV header
-    const csvHeader = ['Date', 'Rule Number', 'Rule Name', 'Status'];
+    const csvHeader = ['Date', 'Rule Number', 'Status'];
     
-    // Create CSV rows with proper rule name mapping
+    // Create CSV rows
     const csvRows = gridData.map(entry => {
-      const rule = ruleMap.get(entry.rule);
-      let ruleName = 'Unknown Rule';
-      
-      // Map common rule numbers to their expected names if not found in database
-      if (!rule) {
-        switch (entry.rule) {
-          case 1:
-            ruleName = 'Alcohol limit';
-            break;
-          case 2:
-            ruleName = 'Exercise';
-            break;
-          case 3:
-            ruleName = 'Yoga/exercise';
-            break;
-          case 4:
-            ruleName = 'Unknown Rule';
-            break;
-          case 5:
-            ruleName = 'meditate';
-            break;
-          case 6:
-            ruleName = 'Food - timing and quantity';
-            break;
-          case 7:
-            ruleName = 'Unknown Rule';
-            break;
-          case 8:
-            ruleName = 'Unknown Rule';
-            break;
-          default:
-            ruleName = 'Unknown Rule';
-        }
-      } else {
-        ruleName = rule.name;
-      }
-
       return [
         entry.date,
         entry.rule,
-        ruleName,
         entry.status
       ].join(',');
     });
