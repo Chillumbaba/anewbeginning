@@ -99,6 +99,12 @@ const Home: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Check file type
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+      setError('Please upload a CSV file');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -109,20 +115,34 @@ const Home: React.FC = () => {
         const csvData = e.target?.result;
         if (typeof csvData === 'string') {
           try {
+            // Send the raw CSV data as text
             const response = await api.post('/api/grid-data/upload-csv', csvData, {
               headers: {
                 'Content-Type': 'text/csv'
-              }
+              },
+              transformRequest: [(data) => data], // Prevent axios from trying to transform the data
             });
             setSuccess(`CSV data imported successfully: ${response.data.count} records imported`);
-          } catch (err) {
-            setError('Failed to import CSV data');
+            
+            // Clear the file input
+            if (event.target) {
+              event.target.value = '';
+            }
+          } catch (err: any) {
+            const errorMessage = err.response?.data?.error || 'Failed to import CSV data';
+            setError(errorMessage);
             console.error('Error importing CSV:', err);
           } finally {
             setLoading(false);
           }
         }
       };
+
+      reader.onerror = () => {
+        setError('Failed to read CSV file');
+        setLoading(false);
+      };
+
       reader.readAsText(file);
     } catch (err) {
       setError('Failed to read CSV file');

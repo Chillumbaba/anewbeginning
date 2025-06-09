@@ -180,48 +180,90 @@ router.post('/upload-csv', async (req, res) => {
     const csvData = req.body;
     const records: Array<{ date: string; rule: number; status: string }> = [];
     
-    // Parse CSV data
-    const parser = parse({
-      columns: true,
-      skip_empty_lines: true
+    // Create a promise to handle CSV parsing
+    const parseCSV = new Promise((resolve, reject) => {
+      const parser = parse({
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+
+      parser.on('readable', function() {
+        let record;
+        while ((record = parser.read()) !== null) {
+          // Handle both possible header formats
+          const date = record.Date || record['Date'];
+          const ruleNumber = record['Rule Number'] || record.RuleNumber;
+          const status = (record.Status || '').toLowerCase();
+
+          // Validate the record
+          if (!date || !ruleNumber || !status) {
+            reject(new Error('Invalid CSV format: Missing required fields'));
+            return;
+          }
+
+          // Validate date format (DD/MM)
+          if (!/^\d{2}\/\d{2}$/.test(date)) {
+            reject(new Error(`Invalid date format for date: ${date}. Expected format: DD/MM`));
+            return;
+          }
+
+          // Validate rule number
+          const ruleNum = parseInt(ruleNumber);
+          if (isNaN(ruleNum) || ruleNum < 1) {
+            reject(new Error(`Invalid rule number: ${ruleNumber}`));
+            return;
+          }
+
+          // Validate status
+          if (!['blank', 'tick', 'cross'].includes(status)) {
+            reject(new Error(`Invalid status: ${status}. Must be blank, tick, or cross`));
+            return;
+          }
+
+          records.push({
+            date,
+            rule: ruleNum,
+            status
+          });
+        }
+      });
+
+      parser.on('error', function(err: Error) {
+        reject(err);
+      });
+
+      parser.on('end', function() {
+        if (records.length === 0) {
+          reject(new Error('No valid records found in CSV'));
+        } else {
+          resolve(records);
+        }
+      });
+
+      // Write data to the parser
+      parser.write(csvData);
+      parser.end();
     });
 
-    parser.on('readable', function() {
-      let record;
-      while ((record = parser.read()) !== null) {
-        records.push({
-          date: record.Date,
-          rule: parseInt(record.RuleNumber),
-          status: record.Status.toLowerCase()
-        });
-      }
-    });
+    // Wait for parsing to complete
+    await parseCSV;
 
-    parser.on('error', function(err: Error) {
-      console.error('Error parsing CSV:', err);
-      res.status(400).json({ error: 'Invalid CSV format' });
+    // Clear existing data
+    await GridData.deleteMany({});
+    
+    // Insert new records
+    await GridData.insertMany(records);
+    
+    res.json({ 
+      message: 'CSV data imported successfully', 
+      count: records.length 
     });
-
-    parser.on('end', async function() {
-      try {
-        // Clear existing data first
-        await GridData.deleteMany({});
-        
-        // Insert new records
-        await GridData.insertMany(records);
-        res.json({ message: 'CSV data imported successfully', count: records.length });
-      } catch (error) {
-        console.error('Error saving CSV data:', error);
-        res.status(500).json({ error: 'Failed to save CSV data' });
-      }
-    });
-
-    // Write data to the parser
-    parser.write(csvData);
-    parser.end();
   } catch (error) {
     console.error('Error processing CSV upload:', error);
-    res.status(500).json({ error: 'Failed to process CSV upload' });
+    res.status(400).json({ 
+      error: error instanceof Error ? error.message : 'Failed to process CSV upload'
+    });
   }
 });
 

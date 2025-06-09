@@ -18,7 +18,12 @@ const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
+
+// Parse JSON by default
 app.use(express.json());
+
+// Parse raw text for CSV uploads
+app.use('/api/grid-data/upload-csv', express.text({ type: 'text/csv' }));
 
 // Debug middleware
 app.use((req, res, next) => {
