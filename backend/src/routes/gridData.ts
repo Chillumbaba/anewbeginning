@@ -1,7 +1,88 @@
 import express from 'express';
 import { GridData } from '../models/GridData';
+import { Rule } from '../models/Rule';
 
 const router = express.Router();
+
+// Export grid data as CSV
+router.get('/export-csv', async (req, res) => {
+  try {
+    // Get all grid data and ALL rules (not just active ones)
+    const [gridData, rules] = await Promise.all([
+      GridData.find().sort({ date: -1, rule: 1 }),
+      Rule.find().sort({ number: 1 }) // Remove the active filter
+    ]);
+
+    // Create a map of rule numbers to their names for quick lookup
+    const ruleMap = new Map(rules.map(rule => [rule.number, rule]));
+
+    // Create CSV header
+    const csvHeader = ['Date', 'Rule Number', 'Rule Name', 'Status'];
+    
+    // Create CSV rows with proper rule name mapping
+    const csvRows = gridData.map(entry => {
+      const rule = ruleMap.get(entry.rule);
+      let ruleName = 'Unknown Rule';
+      
+      // Map common rule numbers to their expected names if not found in database
+      if (!rule) {
+        switch (entry.rule) {
+          case 1:
+            ruleName = 'Alcohol limit';
+            break;
+          case 2:
+            ruleName = 'Exercise';
+            break;
+          case 3:
+            ruleName = 'Yoga/exercise';
+            break;
+          case 4:
+            ruleName = 'Unknown Rule';
+            break;
+          case 5:
+            ruleName = 'meditate';
+            break;
+          case 6:
+            ruleName = 'Food - timing and quantity';
+            break;
+          case 7:
+            ruleName = 'Unknown Rule';
+            break;
+          case 8:
+            ruleName = 'Unknown Rule';
+            break;
+          default:
+            ruleName = 'Unknown Rule';
+        }
+      } else {
+        ruleName = rule.name;
+      }
+
+      return [
+        entry.date,
+        entry.rule,
+        ruleName,
+        entry.status
+      ].join(',');
+    });
+
+    // Combine header and rows
+    const csvContent = [csvHeader.join(','), ...csvRows].join('\n');
+
+    // Set headers for file download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=grid-data.csv');
+
+    // Send the CSV file
+    res.send(csvContent);
+  } catch (error) {
+    console.error('Error exporting grid data:', error);
+    res.status(500).json({ 
+      message: 'Error exporting grid data',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 // Get all grid data
 router.get('/', async (req, res) => {
@@ -72,6 +153,20 @@ router.delete('/:date/:rule', async (req, res) => {
     console.error('Error deleting grid data:', error);
     res.status(500).json({ 
       message: 'Error deleting grid data',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Clear all grid data
+router.delete('/clear-all', async (req, res) => {
+  try {
+    await GridData.deleteMany({});
+    res.json({ message: 'All grid data cleared successfully' });
+  } catch (error) {
+    console.error('Error clearing grid data:', error);
+    res.status(500).json({ 
+      message: 'Error clearing grid data',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }

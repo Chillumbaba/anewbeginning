@@ -15,7 +15,7 @@ const Navigation: React.FC = () => {
     { path: '/grid', label: 'Grid' },
     { path: '/stats', label: 'Statistics' },
     { path: '/rules', label: 'Rules' },
-    { path: '/test-db', label: 'Test DB' },
+    { path: '/test-db', label: 'DB Admin' },
   ];
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

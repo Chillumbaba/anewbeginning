@@ -1,50 +1,55 @@
 # A New Beginning
 
-A task tracking application with a frontend built in React and a backend in Node.js.
+A habit tracking application inspired by Benjamin Franklin's virtue tracking system.
 
 ## Project Structure
 
-This is a monorepo containing:
-- `frontend/`: React application
-- `backend/`: Node.js API server
+This is a monorepo containing both frontend and backend code:
 
-## Deployment on Render
+- `/frontend`: React frontend application
+- `/backend`: Node.js/Express backend application
+
+## Deployment
 
 The application is deployed on Render with two services:
 
 ### Frontend Service (anewbeginning-frontend)
 
-Available at: https://anewbeginning-frontend.onrender.com
-
-Settings:
-- Root Directory: `frontend`
-- Build Command: `npm install && npm run build`
-- Start Command: `npm run serve`
-
-Environment Variables:
-- `NODE_ENV`: production
-- `REACT_APP_API_URL`: https://anewbeginning.onrender.com
+- **URL**: https://anewbeginning-frontend.onrender.com
+- **Settings**:
+  - Root Directory: `frontend`
+  - Build Command: `npm install && npm run build`
+  - Start Command: `npm run serve`
+- **Environment Variables**:
+  - `NODE_ENV`: production
+  - `REACT_APP_API_URL`: https://anewbeginning.onrender.com
 
 ### Backend Service (anewbeginning-backend)
 
-Available at: https://anewbeginning.onrender.com
-
-Settings:
-- Root Directory: `backend`
-- Build Command: `npm install && npm run build`
-- Start Command: `node dist/index.js`
-
-Environment Variables:
-- `JWT_SECRET`: [secure secret]
-- `MONGODB_URI`: [MongoDB connection string]
-- `NODE_ENV`: production
-- `PORT`: 10000
+- **URL**: https://anewbeginning.onrender.com
+- **Settings**:
+  - Root Directory: `backend`
+  - Build Command: `npm install && npm run build`
+  - Start Command: `node dist/index.js`
+- **Environment Variables**:
+  - `NODE_ENV`: production
+  - `PORT`: 10000
+  - `MONGODB_URI`: (configured in Render dashboard)
+  - `JWT_SECRET`: (configured in Render dashboard)
 
 ## Local Development
 
-1. Clone the repository
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Chillumbaba/anewbeginning.git
+   cd anewbeginning
+   ```
+
 2. Install dependencies:
    ```bash
+   # Install root dependencies
+   npm install
+
    # Install frontend dependencies
    cd frontend
    npm install
@@ -54,32 +59,13 @@ Environment Variables:
    npm install
    ```
 
-3. Create `.env` files:
-   - Frontend: Create `frontend/.env` with:
-     ```
-     REACT_APP_API_URL=http://localhost:3001
-     ```
-   - Backend: Create `backend/.env` with:
-     ```
-     JWT_SECRET=[your-secret]
-     MONGODB_URI=[your-mongodb-uri]
-     NODE_ENV=development
-     PORT=3001
-     ```
-
-4. Start the development servers:
+3. Start the development servers:
    ```bash
-   # Start backend
-   cd backend
+   # Start backend (from backend directory)
    npm run dev
 
-   # Start frontend (in a new terminal)
-   cd frontend
+   # Start frontend (from frontend directory)
    npm start
    ```
 
-## Deployment Process
-
-1. Push your changes to GitHub
-2. Render will automatically deploy both services when changes are pushed to the main branch
-3. Monitor the deployment status in the Render dashboard 
+The frontend will be available at http://localhost:3000 and the backend at http://localhost:3001. 

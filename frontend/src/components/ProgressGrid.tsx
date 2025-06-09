@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Paper, Typography, Box, Tooltip, IconButton, useMediaQuery } from '@mui/material';
+import { Paper, Typography, Box, Tooltip, IconButton, useMediaQuery, Button } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import DownloadIcon from '@mui/icons-material/Download';
 import { useTheme } from '@mui/material/styles';
 import api from '../services/api';
 import BenjaminFranklinImage from '../assets/benjamin-franklin.png';
@@ -102,6 +103,34 @@ const ProgressGrid = () => {
     }
   };
 
+  const handleDownloadCSV = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/grid-data/export-csv', {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/csv',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download CSV');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'grid-data.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      setError('Failed to download CSV');
+    }
+  };
+
   const renderCell = (date: string, rule: number) => {
     const status = getCellStatus(date, rule);
     return (
@@ -188,11 +217,32 @@ const ProgressGrid = () => {
   return (
     <Box sx={{ 
       display: 'flex',
-      justifyContent: 'center',
+      flexDirection: 'column',
       alignItems: 'center',
       width: '100%',
-      overflowX: 'auto'
+      gap: 2
     }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        width: '100%',
+        maxWidth: isMobile ? 'auto' : 'fit-content'
+      }}>
+        <Button
+          variant="contained"
+          startIcon={<DownloadIcon />}
+          onClick={handleDownloadCSV}
+          sx={{
+            backgroundColor: theme.palette.custom.orange,
+            color: '#000000',
+            '&:hover': {
+              backgroundColor: theme.palette.custom.beige,
+            }
+          }}
+        >
+          Download CSV
+        </Button>
+      </Box>
       <Paper elevation={0} sx={{ 
         backgroundColor: theme.palette.custom.beige,
         borderRadius: 2,
