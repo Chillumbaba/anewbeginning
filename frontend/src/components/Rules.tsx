@@ -60,7 +60,7 @@ const Rules: React.FC = () => {
   const fetchRules = async () => {
     try {
       console.log('Fetching rules...');
-      const response = await api.get('/api/rules');
+      const response = await api.get('/rules');
       console.log('Rules fetched:', response.data);
       setRules(response.data);
       setError(null);
@@ -72,6 +72,7 @@ const Rules: React.FC = () => {
 
   const handleOpen = (rule?: Rule) => {
     setError(null);
+    console.log('Current rules:', rules);
     const newRule = rule || {
       _id: '',
       number: Math.max(0, ...rules.map(r => r.number)) + 1,
@@ -102,12 +103,12 @@ const Rules: React.FC = () => {
       
       if (editingRule._id) {
         console.log('Updating existing rule...');
-        const response = await api.put(`/api/rules/${editingRule._id}`, editingRule);
+        const response = await api.put(`/rules/${editingRule._id}`, editingRule);
         console.log('Update response:', response.data);
       } else {
         console.log('Creating new rule...');
         const { _id, ...newRule } = editingRule;
-        const response = await api.post('/api/rules', newRule);
+        const response = await api.post('/rules', newRule);
         console.log('Create response:', response.data);
       }
       
@@ -134,7 +135,7 @@ const Rules: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       console.log('Deleting rule:', id);
-      await api.delete(`/api/rules/${id}`);
+      await api.delete(`/rules/${id}`);
       setError(null);
       await fetchRules();
     } catch (err) {

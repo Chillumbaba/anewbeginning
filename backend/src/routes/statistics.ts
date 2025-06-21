@@ -1,8 +1,12 @@
 import express from 'express';
 import { GridData } from '../models/GridData';
 import { Rule } from '../models/Rule';
+import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
+
+// Apply authentication middleware to all routes
+router.use(authenticateToken);
 
 // Helper function to get the start date for a given period
 const getStartDate = (period: string): Date => {
@@ -35,6 +39,7 @@ router.get('/test', (req, res) => {
 });
 
 router.get('/', async (req, res) => {
+  if (!req.user) return res.status(401).send('Unauthorized');
   console.log('GET /api/statistics - Starting request processing');
   try {
     const period = (req.query.period as string) || 'forever';
@@ -42,13 +47,13 @@ router.get('/', async (req, res) => {
     const startDate = getStartDate(period);
     console.log('Start date:', startDate.toISOString());
 
-    // Get all active rules
-    const activeRules = await Rule.find({ active: true });
+    // Get all active rules for current user
+    const activeRules = await Rule.find({ userId: (req.user as any)._id, active: true });
     console.log('Active rules:', activeRules.length);
     const totalRules = activeRules.length;
 
-    // Get all grid data
-    const gridData = await GridData.find();
+    // Get all grid data for current user
+    const gridData = await GridData.find({ userId: (req.user as any)._id });
     console.log('Total grid data entries:', gridData.length);
 
     // Filter dates within the selected period

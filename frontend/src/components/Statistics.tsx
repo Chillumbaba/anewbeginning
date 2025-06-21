@@ -45,7 +45,7 @@ const Statistics: React.FC = () => {
   const fetchStatistics = async (period: string) => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/statistics?period=${period}`);
+      const response = await api.get(`/statistics?period=${period}`);
       setStats(response.data);
       setError(null);
     } catch (err) {

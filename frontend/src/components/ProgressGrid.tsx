@@ -49,7 +49,7 @@ const ProgressGrid = () => {
   const fetchGridData = async () => {
     try {
       console.log('Fetching grid data...');
-      const response = await api.get('/api/grid-data');
+      const response = await api.get('/grid-data');
       console.log('Grid data received:', response.data);
       setGridData(response.data);
     } catch (error) {
@@ -60,7 +60,7 @@ const ProgressGrid = () => {
 
   const fetchRules = async () => {
     try {
-      const response = await api.get('/api/rules');
+      const response = await api.get('/rules');
       const activeRules = response.data.filter((rule: Rule) => rule.active);
       setRules(activeRules);
     } catch (error) {
@@ -100,7 +100,7 @@ const ProgressGrid = () => {
 
       console.log(`Updating cell (${date}, ${rule}) from ${currentStatus} to ${newStatus}`);
       
-      const response = await api.post('/api/grid-data', {
+      const response = await api.post('/grid-data', {
         date,
         rule,
         status: newStatus
@@ -116,18 +116,11 @@ const ProgressGrid = () => {
 
   const handleDownloadCSV = async () => {
     try {
-      const response = await fetch(`${api.defaults.baseURL}/api/grid-data/export-csv`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'text/csv',
-        },
+      const response = await api.get('/grid-data/export-csv', {
+        responseType: 'blob', // Important for file downloads with axios
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to download CSV');
-      }
-
-      const blob = await response.blob();
+      const blob = new Blob([response.data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -233,27 +226,6 @@ const ProgressGrid = () => {
       width: '100%',
       gap: 2
     }}>
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'flex-end',
-        width: '100%',
-        maxWidth: isMobile ? 'auto' : 'fit-content'
-      }}>
-        <Button
-          variant="contained"
-          startIcon={<DownloadIcon />}
-          onClick={handleDownloadCSV}
-          sx={{
-            backgroundColor: theme.palette.custom.orange,
-            color: '#000000',
-            '&:hover': {
-              backgroundColor: theme.palette.custom.beige,
-            }
-          }}
-        >
-          Download CSV
-        </Button>
-      </Box>
       <Paper elevation={0} sx={{ 
         backgroundColor: theme.palette.custom.beige,
         borderRadius: 2,

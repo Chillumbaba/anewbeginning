@@ -3,16 +3,21 @@ import { GridData } from '../models/GridData';
 import { Rule } from '../models/Rule';
 import { Parser } from 'json2csv';
 import { parse } from 'csv-parse';
+import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
+// Apply authentication middleware to all routes
+router.use(authenticateToken);
+
 // Export grid data as CSV
 router.get('/export-csv', async (req, res) => {
+  if (!req.user) return res.status(401).send('Unauthorized');
   try {
-    // Get all grid data and ALL rules (not just active ones)
+    // Get all grid data and ALL rules (not just active ones) for the current user
     const [gridData, rules] = await Promise.all([
-      GridData.find().sort({ date: -1, rule: 1 }),
-      Rule.find().sort({ number: 1 }) // Remove the active filter
+      GridData.find({ userId: (req.user as any)._id }).sort({ date: -1, rule: 1 }),
+      Rule.find({ userId: (req.user as any)._id }).sort({ number: 1 }) // Remove the active filter
     ]);
 
     // Create CSV header
@@ -45,10 +50,11 @@ router.get('/export-csv', async (req, res) => {
   }
 });
 
-// Get all grid data
+// Get all grid data for current user
 router.get('/', async (req, res) => {
+  if (!req.user) return res.status(401).send('Unauthorized');
   try {
-    const gridData = await GridData.find().sort({ date: -1, rule: 1 });
+    const gridData = await GridData.find({ userId: (req.user as any)._id }).sort({ date: -1, rule: 1 });
     res.json(gridData);
   } catch (error) {
     console.error('Error fetching grid data:', error);
@@ -59,8 +65,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Update or create grid data
+// Update or create grid data for current user
 router.post('/', async (req, res) => {
+  if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const { date, rule, status } = req.body;
 
@@ -74,8 +81,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
-    // Try to find existing data
-    const existingData = await GridData.findOne({ date, rule });
+    // Try to find existing data for current user
+    const existingData = await GridData.findOne({ userId: (req.user as any)._id, date, rule });
     
     if (existingData) {
       // Update existing data
@@ -84,8 +91,8 @@ router.post('/', async (req, res) => {
       console.log('Updated grid data:', updatedData);
       res.json(updatedData);
     } else {
-      // Create new data
-      const newGridData = new GridData({ date, rule, status });
+      // Create new data for current user
+      const newGridData = new GridData({ userId: (req.user as any)._id, date, rule, status });
       const savedData = await newGridData.save();
       console.log('Created new grid data:', savedData);
       res.status(201).json(savedData);
@@ -99,11 +106,16 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Delete grid data for a specific date and rule
+// Delete grid data for a specific date and rule for current user
 router.delete('/:date/:rule', async (req, res) => {
+  if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const { date, rule } = req.params;
-    const result = await GridData.findOneAndDelete({ date, rule: parseInt(rule, 10) });
+    const result = await GridData.findOneAndDelete({ 
+      userId: (req.user as any)._id, 
+      date, 
+      rule: parseInt(rule, 10) 
+    });
     
     if (!result) {
       return res.status(404).json({ message: 'Grid data not found' });
@@ -119,10 +131,11 @@ router.delete('/:date/:rule', async (req, res) => {
   }
 });
 
-// Clear all grid data
+// Clear all grid data for current user
 router.delete('/clear-all', async (req, res) => {
+  if (!req.user) return res.status(401).send('Unauthorized');
   try {
-    await GridData.deleteMany({});
+    await GridData.deleteMany({ userId: (req.user as any)._id });
     res.json({ message: 'All grid data cleared successfully' });
   } catch (error) {
     console.error('Error clearing grid data:', error);
@@ -133,11 +146,13 @@ router.delete('/clear-all', async (req, res) => {
   }
 });
 
-// Upload CSV endpoint
+// Upload CSV endpoint for current user
 router.post('/upload-csv', async (req, res) => {
+  if (!req.user) return res.status(401).send('Unauthorized');
+  const userId = (req.user as any)._id.toString();
   try {
     const csvData = req.body;
-    const records: Array<{ date: string; rule: number; status: string }> = [];
+    const records: Array<{ userId: string; date: string; rule: number; status: string }> = [];
     
     // Create a promise to handle CSV parsing
     const parseCSV = new Promise((resolve, reject) => {
@@ -181,6 +196,7 @@ router.post('/upload-csv', async (req, res) => {
           }
 
           records.push({
+            userId,
             date,
             rule: ruleNum,
             status
@@ -208,10 +224,10 @@ router.post('/upload-csv', async (req, res) => {
     // Wait for parsing to complete
     await parseCSV;
 
-    // Clear existing data
-    await GridData.deleteMany({});
+    // Clear existing data for current user
+    await GridData.deleteMany({ userId: (req.user as any)._id });
     
-    // Insert new records
+    // Insert new records for current user
     await GridData.insertMany(records);
     
     res.json({ 

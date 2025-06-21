@@ -1,6 +1,10 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { AuthProvider } from './components/AuthProvider';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import theme from './theme';
 
 // Ensure the root element exists
 const rootElement = document.getElementById('root');
@@ -11,10 +15,17 @@ if (!rootElement) {
 }
 
 const container = document.getElementById('root')!;
-const root = createRoot(container);
+const root = ReactDOM.createRoot(container);
 
 root.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   </React.StrictMode>
 ); 

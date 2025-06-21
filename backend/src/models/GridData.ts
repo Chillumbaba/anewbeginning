@@ -1,6 +1,7 @@
 import mongoose, { Document } from 'mongoose';
 
 interface IGridData extends Document {
+  userId: mongoose.Types.ObjectId;
   date: string;
   rule: number;
   status: 'blank' | 'tick' | 'cross';
@@ -9,6 +10,11 @@ interface IGridData extends Document {
 }
 
 const gridDataSchema = new mongoose.Schema<IGridData>({
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
   date: { 
     type: String, 
     required: true,
@@ -37,8 +43,8 @@ const gridDataSchema = new mongoose.Schema<IGridData>({
   timestamps: true
 });
 
-// Create a compound index on date and rule to ensure uniqueness
-gridDataSchema.index({ date: 1, rule: 1 }, { unique: true });
+// Create a compound index on userId, date and rule to ensure uniqueness per user
+gridDataSchema.index({ userId: 1, date: 1, rule: 1 }, { unique: true });
 
 // Pre-save middleware to ensure status is valid
 gridDataSchema.pre('save', function(next) {

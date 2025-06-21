@@ -1,122 +1,117 @@
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Button, Box, useTheme, IconButton, Menu, MenuItem, useMediaQuery } from '@mui/material';
-import { Link, useLocation } from 'react-router-dom';
-import MenuIcon from '@mui/icons-material/Menu';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Menu, MenuItem, Avatar, useMediaQuery } from '@mui/material';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthProvider';
+import { useTheme } from '@mui/material/styles';
+import benjamin from '../assets/benjamin-franklin.png';
 
 const Navigation: React.FC = () => {
-  const location = useLocation();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery('(max-width:768px)');
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
-  const isActive = (path: string) => location.pathname === path;
-
-  const navItems = [
-    { path: '/grid', label: 'Grid' },
-    { path: '/stats', label: 'Statistics' },
-    { path: '/rules', label: 'Rules' },
-    { path: '/test-db', label: 'DB Admin' },
-  ];
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = () => {
+  const handleClose = () => {
     setAnchorEl(null);
   };
 
+  const handleLogout = () => {
+    logout();
+    handleClose();
+    navigate('/');
+  };
+
+  const navLinkStyle = {
+    textDecoration: 'none',
+    color: 'inherit',
+    margin: '0 8px',
+  };
+
+  const activeNavLinkStyle = {
+    ...navLinkStyle,
+    textDecoration: 'underline',
+    textDecorationThickness: '2px',
+    textUnderlineOffset: '4px',
+  };
+  
+  const menuItems = [
+    { label: 'Record progress', to: '/' },
+    { label: 'Dashboard', to: '/dashboard' },
+    { label: 'Set up Rules', to: '/rules' },
+    { label: 'Administer', to: '/administer' },
+  ];
+
   return (
-    <AppBar position="sticky" elevation={0}>
-      <Toolbar sx={{ 
-        justifyContent: 'space-between', 
-        maxWidth: 1200, 
-        width: '100%', 
-        margin: '0 auto',
-        flexWrap: 'wrap',
-        padding: isMobile ? '8px 16px' : '0 24px',
-      }}>
-        <Box component={Link} to="/" sx={{ 
-          textDecoration: 'none',
-          color: 'inherit',
-          fontWeight: 700,
-          fontSize: isMobile ? '1.25rem' : '1.5rem',
-          letterSpacing: '-0.02em',
-        }}>
-          Benjamin Franklin Method
-        </Box>
-        {isMobile ? (
-          <>
-            <IconButton
-              color="inherit"
-              onClick={handleMenuOpen}
-              sx={{ ml: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-              sx={{
-                '& .MuiPaper-root': {
-                  backgroundColor: theme.palette.custom.beige,
-                  borderRadius: 2,
-                  mt: 1,
-                }
-              }}
-            >
-              {navItems.map((item) => (
-                <MenuItem
-                  key={item.path}
-                  component={Link}
-                  to={item.path}
-                  onClick={handleMenuClose}
-                  sx={{
-                    color: '#000000',
-                    fontWeight: isActive(item.path) ? 700 : 400,
-                    backgroundColor: isActive(item.path) ? `${theme.palette.custom.orange}!important` : 'transparent',
-                    '&:hover': {
-                      backgroundColor: theme.palette.custom.lightBlue,
-                    },
-                  }}
-                >
-                  {item.label}
-                </MenuItem>
-              ))}
-            </Menu>
-          </>
-        ) : (
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {navItems.map((item) => (
-              <Button
-                key={item.path}
-                component={Link}
-                to={item.path}
-                sx={{
-                  color: 'inherit',
-                  fontWeight: isActive(item.path) ? 700 : 400,
-                  position: 'relative',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    width: '100%',
-                    height: 3,
-                    backgroundColor: theme.palette.custom.orange,
-                    opacity: isActive(item.path) ? 1 : 0,
-                    transition: 'opacity 0.2s ease-in-out',
-                  },
-                  '&:hover::after': {
-                    opacity: 0.7,
-                  },
-                }}
+    <AppBar position="static" sx={{ backgroundColor: 'black', color: 'white' }}>
+      <Toolbar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <NavLink to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+            anewbeginning
+          </NavLink>
+        </Typography>
+
+        {!isMobile && (
+          <Box>
+            {menuItems.map((item) => (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                style={({ isActive }) => (isActive ? activeNavLinkStyle : navLinkStyle)}
               >
-                {item.label}
-              </Button>
+                <Button color="inherit">{item.label}</Button>
+              </NavLink>
             ))}
           </Box>
+        )}
+
+        {user && (
+          <div>
+            <IconButton
+              size="large"
+              aria-label="account of current user"
+              aria-controls="menu-appbar"
+              aria-haspopup="true"
+              onClick={handleMenu}
+              color="inherit"
+            >
+              <Avatar src={user.picture || benjamin} alt={user.name} sx={{ width: 32, height: 32 }} />
+            </IconButton>
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={open}
+              onClose={handleClose}
+            >
+              {isMobile &&
+                menuItems.map((item) => (
+                  <MenuItem
+                    key={item.label}
+                    onClick={() => {
+                      navigate(item.to);
+                      handleClose();
+                    }}
+                  >
+                    {item.label}
+                  </MenuItem>
+                ))}
+              <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            </Menu>
+          </div>
         )}
       </Toolbar>
     </AppBar>
