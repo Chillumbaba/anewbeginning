@@ -3,10 +3,9 @@ import { Box, Paper, Typography, CircularProgress } from '@mui/material';
 import { GoogleLogin, GoogleOAuthProvider, CredentialResponse } from '@react-oauth/google';
 import { useAuth } from './AuthProvider';
 import benjamin from '../assets/benjamin-franklin.png';
-import axios from 'axios';
+import api from '../services/api';
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
-const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 const SignIn: React.FC = () => {
   const { setUserAndToken, loading } = useAuth();
@@ -14,7 +13,7 @@ const SignIn: React.FC = () => {
   const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) return;
     try {
-      const response = await axios.post(`${API_URL}/auth/google`, {
+      const response = await api.post(`/auth/google`, {
         token: credentialResponse.credential,
       });
       setUserAndToken(response.data.user, response.data.token);

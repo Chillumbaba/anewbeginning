@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || '/api';
+const backendRoot = process.env.REACT_APP_API_URL || '';
 
-console.log('API Base URL:', API_URL); // For debugging
+console.log('API Base URL:', `${backendRoot}/api`); // For debugging
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: `${backendRoot}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
