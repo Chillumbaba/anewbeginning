@@ -74,6 +74,17 @@ const ProgressGrid = () => {
     return cell ? cell.status : 'blank';
   };
 
+  // Function to check if a date is a weekend
+  const isWeekend = (dateStr: string): boolean => {
+    // Parse the date string (format: DD/MM)
+    const [day, month] = dateStr.split('/');
+    const year = new Date().getFullYear();
+    const date = new Date(year, parseInt(month) - 1, parseInt(day));
+    
+    // Check if it's Saturday (6) or Sunday (0)
+    return date.getDay() === 0 || date.getDay() === 6;
+  };
+
   const handleCellClick = async (date: string, rule: number) => {
     try {
       const currentStatus = getCellStatus(date, rule);
@@ -295,7 +306,7 @@ const ProgressGrid = () => {
                 display: 'flex',
                 alignItems: 'center',
                 padding: isMobile ? '1px 2px' : '2px 4px',
-                backgroundColor: '#000000',
+                backgroundColor: isWeekend(date) ? '#2196F3' : '#000000',
                 border: 'none',
                 borderRadius: 0,
                 fontWeight: index === 0 ? 700 : 400,
