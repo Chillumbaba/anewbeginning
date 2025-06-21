@@ -75,17 +75,15 @@ router.post('/upload-csv', async (req, res) => {
             trim: true
         });
 
-        parser.on('readable', function() {
-            let record;
-            while ((record = parser.read()) !== null) {
-                records.push({
-                    userId,
-                    number: parseInt(record.number, 10),
-                    name: record.name,
-                    description: record.description,
-                    active: record.active.toLowerCase() === 'true'
-                });
-            }
+        // Use the 'data' event to process records one by one
+        parser.on('data', (record) => {
+            records.push({
+                userId,
+                number: parseInt(record.number, 10),
+                name: record.name,
+                description: record.description,
+                active: String(record.active).toLowerCase() === 'true'
+            });
         });
 
         parser.on('error', function(err) {
