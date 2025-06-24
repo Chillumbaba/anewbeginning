@@ -22,10 +22,7 @@
     "google-auth-library": "^9.0.0",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.1.1",
-    "@mui/x-date-pickers": "^6.0.0",
-    "@date-io/date-fns": "^3.0.0",
-    "date-fns": "^2.30.0"
+    "mongoose": "^8.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.3",
