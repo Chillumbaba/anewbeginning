@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 interface User {
   id: string;
@@ -27,8 +27,6 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-const API_URL = process.env.REACT_APP_API_URL || '/api';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -54,10 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedToken = localStorage.getItem('jwt');
     if (storedToken) {
       setToken(storedToken);
-      axios
-        .get(`${API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${storedToken}` },
-        })
+      api
+        .get(`auth/me`)
         .then((res) => {
           setUser(res.data.user);
         })

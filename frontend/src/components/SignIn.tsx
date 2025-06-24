@@ -13,7 +13,7 @@ const SignIn: React.FC = () => {
   const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) return;
     try {
-      const response = await api.post(`/auth/google`, {
+      const response = await api.post(`auth/google`, {
         token: credentialResponse.credential,
       });
       setUserAndToken(response.data.user, response.data.token);

@@ -52,7 +52,7 @@ const Navigation: React.FC = () => {
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           <NavLink to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-            anewbeginning
+            Benji's CBT
           </NavLink>
         </Typography>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Paper, Typography, Box, Tooltip, IconButton, useMediaQuery, Button } from '@mui/material';
+import { Paper, Typography, Box, Tooltip, IconButton, useMediaQuery, Button, Pagination, TextField } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -28,19 +28,10 @@ const ProgressGrid = () => {
   const [gridData, setGridData] = useState<GridCell[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const daysPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDate, setSelectedDate] = useState<string>('');
   
-  const getDates = () => {
-    const dates = [];
-    for (let i = 0; i < (isMobile ? 7 : 10); i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      dates.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }));
-    }
-    return dates;
-  };
-
-  const dates = getDates();
-
   useEffect(() => {
     fetchGridData();
     fetchRules();
@@ -135,6 +126,77 @@ const ProgressGrid = () => {
     }
   };
 
+  // Helper to format date for display (DD-MMM)
+  const formatDisplayDate = (dateStr: string) => {
+    const [day, month] = dateStr.split('/');
+    const year = new Date().getFullYear();
+    const date = new Date(year, parseInt(month) - 1, parseInt(day));
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  };
+
+  // Helper to format date as DD/MM
+  const formatValueDate = (date: Date) => {
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+  };
+
+  // Get all unique dates from gridData
+  const allUniqueDates = Array.from(new Set(gridData.map(item => item.date)));
+
+  // Find the oldest date in the data
+  let dateRange: { value: string; display: string }[] = [];
+  const today = new Date();
+  // Find the oldest date in the data
+  let oldest = new Date(today);
+  if (allUniqueDates.length > 0) {
+    allUniqueDates.forEach(dateStr => {
+      const [d, m] = dateStr.split('/').map(Number);
+      const dt = new Date(today.getFullYear(), m - 1, d);
+      if (dt < oldest) oldest = dt;
+    });
+  }
+  // Generate all days from today to oldest (inclusive)
+  dateRange = [];
+  let current = new Date(today);
+  while (current >= oldest) {
+    dateRange.push({
+      value: formatValueDate(current),
+      display: formatDisplayDate(formatValueDate(current))
+    });
+    current.setDate(current.getDate() - 1);
+  }
+
+  // Pagination logic
+  const pageCount = Math.ceil(dateRange.length / daysPerPage);
+  const paginatedDates = dateRange.slice((currentPage - 1) * daysPerPage, currentPage * daysPerPage);
+
+  // Find the page containing a given date string (DD/MM)
+  const findPageForDate = (dateStr: string) => {
+    const idx = dateRange.findIndex(d => d.value === dateStr);
+    if (idx === -1) return 1;
+    return Math.floor(idx / daysPerPage) + 1;
+  };
+
+  // Handler for date input selection
+  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const dateValue = event.target.value;
+    setSelectedDate(dateValue);
+    
+    if (dateValue) {
+      // Convert YYYY-MM-DD to DD/MM format
+      const date = new Date(dateValue);
+      const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+      
+      console.log('Selected date:', dateValue);
+      console.log('Converted to DD/MM:', dateStr);
+      console.log('Available dates in range:', dateRange.map(d => d.value));
+      
+      const page = findPageForDate(dateStr);
+      console.log('Found page:', page);
+      
+      setCurrentPage(page);
+    }
+  };
+
   const renderCell = (date: string, rule: number) => {
     const status = getCellStatus(date, rule);
     return (
@@ -226,6 +288,20 @@ const ProgressGrid = () => {
       width: '100%',
       gap: 2
     }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'end' }}>
+        <Button variant="contained" onClick={() => setCurrentPage(1)}>Today</Button>
+        <TextField
+          type="date"
+          value={selectedDate}
+          onChange={handleDateChange}
+          variant="outlined"
+          size="small"
+          inputProps={{
+            max: today.toISOString().split('T')[0]
+          }}
+          sx={{ minWidth: 150 }}
+        />
+      </Box>
       <Paper elevation={0} sx={{ 
         backgroundColor: theme.palette.custom.beige,
         borderRadius: 2,
@@ -270,32 +346,40 @@ const ProgressGrid = () => {
           ))}
 
           {/* Date rows with cells */}
-          {dates.map((date, index) => (
-            <React.Fragment key={date}>
+          {paginatedDates.map((dateObj, index) => (
+            <React.Fragment key={dateObj.value}>
               <Box sx={{ 
                 gridColumn: '1',
                 fontSize: isMobile ? '0.625rem' : '0.675rem',
                 display: 'flex',
                 alignItems: 'center',
                 padding: isMobile ? '1px 2px' : '2px 4px',
-                backgroundColor: isWeekend(date) ? '#2196F3' : '#000000',
+                backgroundColor: isWeekend(dateObj.value) ? '#2196F3' : '#000000',
                 border: 'none',
                 borderRadius: 0,
                 fontWeight: index === 0 ? 700 : 400,
                 color: '#FFFFFF',
                 height: isMobile ? '28px' : '32px'
               }}>
-                {index === 0 ? 'Today' : index === 1 ? 'Yesterday' : date}
+                {currentPage === 1 && index === 0 ? 'Today' : currentPage === 1 && index === 1 ? 'Yesterday' : dateObj.display}
               </Box>
               {rules.map(rule => (
-                <Box key={`${date}-${rule.number}`}>
-                  {renderCell(date, rule.number)}
+                <Box key={`${dateObj.value}-${rule.number}`}>
+                  {renderCell(dateObj.value, rule.number)}
                 </Box>
               ))}
             </React.Fragment>
           ))}
         </Box>
       </Paper>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        <Pagination
+          count={pageCount}
+          page={currentPage}
+          onChange={(_, value) => setCurrentPage(value)}
+          color="primary"
+        />
+      </Box>
     </Box>
   );
 };

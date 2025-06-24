@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const backendRoot = process.env.REACT_APP_API_URL || '';
+const backendRoot = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 console.log('API Base URL:', `${backendRoot}/api`); // For debugging
 
