@@ -20,6 +20,8 @@ interface Rule {
   name: string;
   description?: string;
   active: boolean;
+  createdAt?: string; // Keep for backward compatibility
+  createDate?: string; // New field for custom create date
 }
 
 const ProgressGrid = () => {
@@ -142,11 +144,12 @@ const ProgressGrid = () => {
   // Get all unique dates from gridData
   const allUniqueDates = Array.from(new Set(gridData.map(item => item.date)));
 
-  // Find the oldest date in the data
+  // Find the oldest date - either from grid data or rule createDate
   let dateRange: { value: string; display: string }[] = [];
   const today = new Date();
-  // Find the oldest date in the data
   let oldest = new Date(today);
+  
+  // Check grid data for oldest date
   if (allUniqueDates.length > 0) {
     allUniqueDates.forEach(dateStr => {
       const [d, m] = dateStr.split('/').map(Number);
@@ -154,6 +157,14 @@ const ProgressGrid = () => {
       if (dt < oldest) oldest = dt;
     });
   }
+  
+  // Check rule createDate for oldest date
+  rules.forEach(rule => {
+    if (rule.createDate || rule.createdAt) {
+      const ruleDate = new Date(rule.createDate || rule.createdAt!);
+      if (ruleDate < oldest) oldest = ruleDate;
+    }
+  });
   // Generate all days from today to oldest (inclusive)
   dateRange = [];
   let current = new Date(today);

@@ -1,9 +1,13 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { GridData } from '../models/GridData';
 import { Rule } from '../models/Rule';
 import { Parser } from 'json2csv';
 import { parse } from 'csv-parse';
 import { authenticateToken } from '../middleware/auth';
+
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
 
 const router = express.Router();
 
@@ -11,7 +15,7 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Export grid data as CSV
-router.get('/export-csv', async (req, res) => {
+router.get('/export-csv', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     // Get all grid data and ALL rules (not just active ones) for the current user
@@ -51,7 +55,7 @@ router.get('/export-csv', async (req, res) => {
 });
 
 // Get all grid data for current user
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const gridData = await GridData.find({ userId: (req.user as any)._id }).sort({ date: -1, rule: 1 });
@@ -66,7 +70,7 @@ router.get('/', async (req, res) => {
 });
 
 // Update or create grid data for current user
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const { date, rule, status } = req.body;
@@ -107,7 +111,7 @@ router.post('/', async (req, res) => {
 });
 
 // Delete grid data for a specific date and rule for current user
-router.delete('/:date/:rule', async (req, res) => {
+router.delete('/:date/:rule', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const { date, rule } = req.params;
@@ -132,7 +136,7 @@ router.delete('/:date/:rule', async (req, res) => {
 });
 
 // Clear all grid data for current user
-router.delete('/clear-all', async (req, res) => {
+router.delete('/clear-all', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     await GridData.deleteMany({ userId: (req.user as any)._id });
@@ -147,7 +151,7 @@ router.delete('/clear-all', async (req, res) => {
 });
 
 // Upload CSV endpoint for current user
-router.post('/upload-csv', async (req, res) => {
+router.post('/upload-csv', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   const userId = (req.user as any)._id.toString();
   try {

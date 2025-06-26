@@ -1,7 +1,11 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { GridData } from '../models/GridData';
 import { Rule } from '../models/Rule';
 import { authenticateToken } from '../middleware/auth';
+
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
 
 const router = express.Router();
 
@@ -38,119 +42,172 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Statistics router is working' });
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   console.log('GET /api/statistics - Starting request processing');
   try {
     const period = (req.query.period as string) || 'forever';
     console.log('Period:', period);
-    const startDate = getStartDate(period);
-    console.log('Start date:', startDate.toISOString());
 
     // Get all active rules for current user
     const activeRules = await Rule.find({ userId: (req.user as any)._id, active: true });
     console.log('Active rules:', activeRules.length);
     const totalRules = activeRules.length;
 
+    if (totalRules === 0) {
+      return res.json({
+        totalRules: 0,
+        totalDays: 0,
+        completionRate: 0,
+        streakCount: 0,
+        period,
+        ruleProgress: [],
+        totalTicks: 0,
+        totalPossibleTicks: 0
+      });
+    }
+
     // Get all grid data for current user
     const gridData = await GridData.find({ userId: (req.user as any)._id });
     console.log('Total grid data entries:', gridData.length);
 
-    // Filter dates within the selected period
     const today = new Date();
     today.setHours(23, 59, 59, 999); // End of today
-    console.log('Today (end of day):', today.toISOString());
 
-    // Get all unique dates from grid data
-    const uniqueDates = [...new Set(gridData.map(data => data.date))];
+    // Find the oldest rule createDate (using createDate field, fallback to createdAt)
+    let oldestRuleDate = new Date(today);
+    activeRules.forEach(rule => {
+      const ruleCreateDate = rule.createDate || (rule as any).createdAt;
+      if (ruleCreateDate < oldestRuleDate) {
+        oldestRuleDate = new Date(ruleCreateDate);
+      }
+    });
+    oldestRuleDate.setHours(0, 0, 0, 0); // Start of day
+
+    console.log('Oldest rule date:', oldestRuleDate.toISOString());
+
+    // Apply period filter to the oldest rule date
+    const periodStartDate = getStartDate(period);
+    const effectiveStartDate = period === 'forever' ? oldestRuleDate : new Date(Math.max(oldestRuleDate.getTime(), periodStartDate.getTime()));
     
-    // Filter and sort dates within the period
-    const filteredDates = uniqueDates
-      .filter(dateStr => {
-        const [day, month] = dateStr.split('/').map(Number);
-        const date = new Date(today.getFullYear(), month - 1, day);
-        date.setHours(12, 0, 0, 0); // Noon to avoid timezone issues
-        return date >= startDate && date <= today;
-      })
-      .sort((a, b) => {
-        const [dayA, monthA] = a.split('/').map(Number);
-        const [dayB, monthB] = b.split('/').map(Number);
-        const dateA = new Date(today.getFullYear(), monthA - 1, dayA);
-        const dateB = new Date(today.getFullYear(), monthB - 1, dayB);
-        return dateB.getTime() - dateA.getTime();
-      });
+    console.log('Effective start date:', effectiveStartDate.toISOString());
 
-    console.log('Filtered dates:', filteredDates);
-    const totalDays = filteredDates.length;
-    console.log('Total days:', totalDays);
+    // Generate all date strings from effective start date to today
+    const allDateStrings: string[] = [];
+    let currentDate = new Date(effectiveStartDate);
+    while (currentDate <= today) {
+      const dateStr = currentDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+      allDateStrings.push(dateStr);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
 
-    // Calculate completion rate
+    // Use actual count of generated dates for accuracy
+    const totalDays = allDateStrings.length;
+    console.log('Total days tracked:', totalDays);
+    console.log('Generated date strings:', allDateStrings.length);
+
+    // Calculate overall progress: total ticks / total possible cells
     let totalTicks = 0;
-    const totalPossibleTicks = totalDays * totalRules;
+    let totalPossibleCells = 0;
 
-    // For each date in the filtered period
-    filteredDates.forEach(date => {
-      // For each active rule
+    allDateStrings.forEach(dateStr => {
       activeRules.forEach(rule => {
-        // Check if there's a tick for this rule on this date
-        const hasTick = gridData.some(data => 
-          data.date === date && 
-          data.rule === rule.number && 
-          data.status === 'tick'
-        );
-        if (hasTick) {
-          totalTicks++;
+        // Check if this rule was active on this date (rule must exist before or on this date)
+        const ruleDateStr = dateStr.split('/');
+        const checkDate = new Date(today.getFullYear(), parseInt(ruleDateStr[1]) - 1, parseInt(ruleDateStr[0]));
+        const ruleCreateDate = new Date(rule.createDate || (rule as any).createdAt);
+        ruleCreateDate.setHours(0, 0, 0, 0);
+        
+        if (checkDate >= ruleCreateDate) {
+          totalPossibleCells++;
+          
+          // Check if there's a tick for this rule on this date
+          const hasTick = gridData.some(data => 
+            data.date === dateStr && 
+            data.rule === rule.number && 
+            data.status === 'tick'
+          );
+          if (hasTick) {
+            totalTicks++;
+          }
         }
       });
     });
 
-    console.log('Total ticks:', totalTicks);
-    console.log('Total possible ticks:', totalPossibleTicks);
-    const completionRate = totalPossibleTicks > 0 
-      ? (totalTicks / totalPossibleTicks) * 100 
-      : 0;
-    console.log('Completion rate:', completionRate);
+    const completionRate = totalPossibleCells > 0 ? (totalTicks / totalPossibleCells) * 100 : 0;
+    console.log('Total ticks:', totalTicks, 'Total possible cells:', totalPossibleCells, 'Completion rate:', completionRate);
 
     // Calculate rule-specific progress
-    const ruleProgress = await Promise.all(activeRules.map(async (rule) => {
+    const ruleProgress = activeRules.map((rule) => {
+      const ruleCreateDate = new Date(rule.createDate || (rule as any).createdAt);
+      ruleCreateDate.setHours(0, 0, 0, 0);
+      
+      // Apply period filter for this rule
+      const ruleEffectiveStartDate = period === 'forever' ? ruleCreateDate : new Date(Math.max(ruleCreateDate.getTime(), periodStartDate.getTime()));
+      
+      // Count ticks for this rule in the effective period
       let ruleTicks = 0;
-      filteredDates.forEach(date => {
+      let rulePossibleCells = 0;
+      
+      // Generate date strings for this rule's period
+      let ruleCurrentDate = new Date(ruleEffectiveStartDate);
+      while (ruleCurrentDate <= today) {
+        const ruleDateStr = ruleCurrentDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+        rulePossibleCells++;
+        
         const hasTick = gridData.some(data => 
-          data.date === date && 
+          data.date === ruleDateStr && 
           data.rule === rule.number && 
           data.status === 'tick'
         );
         if (hasTick) {
           ruleTicks++;
         }
-      });
+        
+        ruleCurrentDate.setDate(ruleCurrentDate.getDate() + 1);
+      }
 
-      const ruleCompletionRate = totalDays > 0 ? (ruleTicks / totalDays) * 100 : 0;
+      // Use actual count of generated dates for this rule
+      const ruleEffectiveDays = rulePossibleCells;
+      const ruleCompletionRate = rulePossibleCells > 0 ? (ruleTicks / rulePossibleCells) * 100 : 0;
 
       return {
         ruleNumber: rule.number,
         ruleName: rule.name,
         completionRate: ruleCompletionRate,
-        totalTicks: ruleTicks
+        totalTicks: ruleTicks,
+        totalDays: ruleEffectiveDays,
+        possibleCells: rulePossibleCells
       };
-    }));
-
-    // Calculate current streak
-    let streakCount = 0;
-    const sortedDates = filteredDates.sort((a, b) => {
-      const [dayA, monthA] = a.split('/').map(Number);
-      const [dayB, monthB] = b.split('/').map(Number);
-      const dateA = new Date(today.getFullYear(), monthA - 1, dayA);
-      const dateB = new Date(today.getFullYear(), monthB - 1, dayB);
-      return dateB.getTime() - dateA.getTime();
     });
 
-    // Calculate streak
-    for (const date of sortedDates) {
-      const dayData = gridData.filter(data => data.date === date);
-      const allRulesCompleted = activeRules.every(rule => 
-        dayData.some(data => data.rule === rule.number && data.status === 'tick')
-      );
+    // Calculate current streak (consecutive days where all rules have ticks)
+    let streakCount = 0;
+    const sortedDateStrings = [...allDateStrings].reverse(); // Most recent first
+
+    for (const dateStr of sortedDateStrings) {
+      // Check if all active rules that existed on this date have ticks
+      let allRulesCompleted = true;
+      
+      for (const rule of activeRules) {
+        const ruleDateParts = dateStr.split('/');
+        const checkDate = new Date(today.getFullYear(), parseInt(ruleDateParts[1]) - 1, parseInt(ruleDateParts[0]));
+        const ruleCreateDate = new Date(rule.createDate || (rule as any).createdAt);
+        ruleCreateDate.setHours(0, 0, 0, 0);
+        
+        // Only check rules that existed on this date
+        if (checkDate >= ruleCreateDate) {
+          const hasTick = gridData.some(data => 
+            data.date === dateStr && 
+            data.rule === rule.number && 
+            data.status === 'tick'
+          );
+          if (!hasTick) {
+            allRulesCompleted = false;
+            break;
+          }
+        }
+      }
 
       if (allRulesCompleted) {
         streakCount++;
@@ -167,7 +224,7 @@ router.get('/', async (req, res) => {
       period,
       ruleProgress,
       totalTicks,
-      totalPossibleTicks
+      totalPossibleTicks: totalPossibleCells
     };
 
     console.log('Sending response:', response);

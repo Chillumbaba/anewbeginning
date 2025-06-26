@@ -27,6 +27,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import api from '../services/api';
+import { useAuth } from './AuthProvider';
 
 interface Rule {
   _id: string;
@@ -34,7 +35,8 @@ interface Rule {
   name: string;
   description?: string;
   active: boolean;
-  createdAt: string;
+  createdAt: string; // Keep for backward compatibility
+  createDate: string; // New field for custom create date
 }
 
 interface ApiError {
@@ -47,12 +49,16 @@ interface ApiError {
 }
 
 const Rules: React.FC = () => {
+  const { user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:768px)');
   const [rules, setRules] = useState<Rule[]>([]);
   const [open, setOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Check if current user is GODMODE (krishnan.paddy@gmail.com)
+  const isGodMode = user?.email === 'krishnan.paddy@gmail.com' && user?.isAdmin;
 
   useEffect(() => {
     fetchRules();
@@ -80,7 +86,8 @@ const Rules: React.FC = () => {
       name: '',
       description: '',
       active: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(), // Keep for backward compatibility
+      createDate: new Date().toISOString() // New field for custom create date
     };
     console.log('Opening dialog with rule:', newRule);
     setEditingRule(newRule);
@@ -105,12 +112,16 @@ const Rules: React.FC = () => {
       
       if (editingRule._id) {
         console.log('Updating existing rule...');
-        const { number, createdAt, ...updateData } = editingRule;
+        const { number, createdAt, createDate, ...baseUpdateData } = editingRule;
+        
+        // Only include createDate if user is GODMODE (send as createdAt to backend for compatibility)
+        const updateData = isGodMode ? { ...baseUpdateData, createdAt: createDate } : baseUpdateData;
+        
         const response = await api.put(`/rules/${editingRule._id}`, updateData);
         console.log('Update response:', response.data);
       } else {
         console.log('Creating new rule...');
-        const { _id, number, createdAt, ...newRule } = editingRule;
+        const { _id, number, createdAt, createDate, ...newRule } = editingRule;
         const response = await api.post('/rules', newRule);
         console.log('Create response:', response.data);
       }
@@ -176,7 +187,7 @@ const Rules: React.FC = () => {
               </Box>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Created at: {new Date(rule.createdAt).toLocaleDateString()}
+              Created at: {new Date(rule.createDate || rule.createdAt).toLocaleDateString()}
             </Typography>
             {rule.description && (
               <Typography variant="body2" color="text.secondary">
@@ -266,7 +277,7 @@ const Rules: React.FC = () => {
                 }
               }}
             >
-              <TableCell sx={{ fontSize: '0.875rem' }}>{new Date(rule.createdAt).toLocaleDateString()}</TableCell>
+              <TableCell sx={{ fontSize: '0.875rem' }}>{new Date(rule.createDate || rule.createdAt).toLocaleDateString()}</TableCell>
               <TableCell sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{rule.name}</TableCell>
               <TableCell sx={{ fontSize: '0.875rem' }}>{rule.description}</TableCell>
               <TableCell>
@@ -407,6 +418,18 @@ const Rules: React.FC = () => {
             onChange={(e) => setEditingRule(prev => prev ? {...prev, description: e.target.value} : null)}
             sx={{ mb: 2 }}
           />
+          {isGodMode && (
+            <TextField
+              margin="dense"
+              label="Created Date (GODMODE)"
+              type="datetime-local"
+              fullWidth
+              value={editingRule?.createDate ? new Date(editingRule.createDate).toISOString().slice(0, 16) : ''}
+              onChange={(e) => setEditingRule(prev => prev ? {...prev, createDate: e.target.value ? new Date(e.target.value).toISOString() : prev.createDate} : null)}
+              sx={{ mb: 2 }}
+              helperText="Only available in GODMODE for krishnan.paddy@gmail.com"
+            />
+          )}
           <FormControlLabel
             control={
               <Switch

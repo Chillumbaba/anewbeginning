@@ -1,10 +1,15 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { GridData } from '../models/GridData';
 import { Rule } from '../models/Rule';
+import { Text } from '../models/Text';
 import { User } from '../models/User';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 import { Parser } from 'json2csv';
 import { parse } from 'csv-parse';
+
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
 
 const router = express.Router();
 
@@ -13,7 +18,7 @@ router.use(authenticateToken);
 router.use(requireAdmin);
 
 // Get all users (admin only)
-router.get('/users', async (req, res) => {
+router.get('/users', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const users = await User.find({}, { googleId: 0 }).sort({ createdAt: -1 });
     res.json(users);
@@ -23,7 +28,7 @@ router.get('/users', async (req, res) => {
 });
 
 // Clear all grid data for all users
-router.delete('/clear-all-grid-data', async (req, res) => {
+router.delete('/clear-all-grid-data', async (req: AuthenticatedRequest, res: Response) => {
   try {
     await GridData.deleteMany({});
     res.json({ message: 'All grid data for all users has been cleared.' });
@@ -33,7 +38,7 @@ router.delete('/clear-all-grid-data', async (req, res) => {
 });
 
 // Clear grid data for specific user
-router.delete('/clear-user-grid-data/:userId', async (req, res) => {
+router.delete('/clear-user-grid-data/:userId', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { userId } = req.params;
     const result = await GridData.deleteMany({ userId });
@@ -51,7 +56,7 @@ router.delete('/clear-user-grid-data/:userId', async (req, res) => {
 });
 
 // Clear admin's own grid data
-router.delete('/clear-own-grid-data', async (req, res) => {
+router.delete('/clear-own-grid-data', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const result = await GridData.deleteMany({ userId: req.user!._id });
@@ -69,7 +74,7 @@ router.delete('/clear-own-grid-data', async (req, res) => {
 });
 
 // Get statistics for all users
-router.get('/statistics', async (req, res) => {
+router.get('/statistics', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const users = await User.find({}, { email: 1, name: 1 });
     const statistics = [];
@@ -106,7 +111,7 @@ router.get('/statistics', async (req, res) => {
 });
 
 // Get database dump
-router.get('/db-dump', async (req, res) => {
+router.get('/db-dump', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user || !(req.user as any).isAdmin) return res.status(403).send('Forbidden');
   try {
     const users = await User.find({});
@@ -121,7 +126,7 @@ router.get('/db-dump', async (req, res) => {
 });
 
 // Export all rules for all users
-router.get('/export-all-rules', async (req, res) => {
+router.get('/export-all-rules', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const rules = await Rule.find({}).populate('userId', 'email');
     const fields = ['userId.email', 'number', 'name', 'description', 'active'];
@@ -136,7 +141,7 @@ router.get('/export-all-rules', async (req, res) => {
 });
 
 // Export all progress for all users
-router.get('/export-all-progress', async (req, res) => {
+router.get('/export-all-progress', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const progress = await GridData.find({}).populate('userId', 'email');
     const fields = ['userId.email', 'date', 'rule', 'status'];
@@ -152,7 +157,7 @@ router.get('/export-all-progress', async (req, res) => {
 
 // Note: Uploading for all users via CSV is complex and requires careful
 // implementation to map CSV rows to specific users, often using email as a key.
-router.post('/upload-all-progress', async (req, res) => {
+router.post('/upload-all-progress', async (req: AuthenticatedRequest, res: Response) => {
     try {
         const csvData = req.body;
         const records: any[] = [];
@@ -236,6 +241,35 @@ router.post('/upload-all-progress', async (req, res) => {
 
 router.post('/upload-all-rules', (req, res) => {
     res.status(501).json({ message: 'Not Implemented: Uploading rules for all users requires a robust implementation.' });
+});
+
+// Migration endpoint to set createDate for existing rules
+router.post('/migrate-rule-dates', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log('Starting rule date migration...');
+    
+    // Find all rules without createDate field
+    const rulesWithoutCreateDate = await Rule.find({ createDate: { $exists: false } });
+    console.log(`Found ${rulesWithoutCreateDate.length} rules without createDate`);
+    
+    // Update each rule to set createDate to createdAt
+    for (const rule of rulesWithoutCreateDate) {
+      rule.createDate = (rule as any).createdAt || new Date();
+      await rule.save();
+      console.log(`Updated rule ${rule._id} with createDate: ${rule.createDate}`);
+    }
+    
+    res.json({ 
+      message: 'Rule date migration completed successfully',
+      updatedCount: rulesWithoutCreateDate.length
+    });
+  } catch (error: any) {
+    console.error('Error during rule date migration:', error);
+    res.status(500).json({ 
+      message: 'Error during rule date migration', 
+      error: error.message 
+    });
+  }
 });
 
 export default router; 

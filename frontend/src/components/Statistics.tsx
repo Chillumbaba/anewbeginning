@@ -8,6 +8,8 @@ interface RuleProgress {
   ruleName: string;
   completionRate: number;
   totalTicks: number;
+  totalDays: number;
+  possibleCells: number;
 }
 
 interface StatisticsData {
@@ -239,8 +241,8 @@ const Statistics: React.FC = () => {
               <TableRow>
                 <TableCell sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Rule</TableCell>
                 <TableCell sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Progress</TableCell>
-                <TableCell align="right" sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Rate</TableCell>
                 <TableCell align="right" sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Days</TableCell>
+                <TableCell align="right" sx={{ py: 1, fontWeight: 600, fontSize: '0.75rem', borderBottom: 'none' }}>Ticks</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -271,8 +273,8 @@ const Statistics: React.FC = () => {
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell align="right" sx={{ py: 1, fontSize: '0.75rem', borderBottom: 'none' }}>{`${Math.round(rule.completionRate)}%`}</TableCell>
-                  <TableCell align="right" sx={{ py: 1, fontSize: '0.75rem', borderBottom: 'none' }}>{rule.totalTicks}</TableCell>
+                  <TableCell align="right" sx={{ py: 1, fontSize: '0.75rem', borderBottom: 'none' }}>{rule.totalDays}</TableCell>
+                  <TableCell align="right" sx={{ py: 1, fontSize: '0.75rem', borderBottom: 'none' }}>{`${rule.totalTicks}/${rule.possibleCells}`}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

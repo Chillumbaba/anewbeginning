@@ -1,6 +1,10 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { Text } from '../models/Text';
 import { authenticateToken } from '../middleware/auth';
+
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
 
 const router = express.Router();
 
@@ -8,7 +12,7 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Get all texts for current user
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const texts = await Text.find({ userId: (req.user as any)._id }).sort({ createdAt: -1 });
@@ -19,7 +23,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new text for current user
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const { content } = req.body;

@@ -1,8 +1,12 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { Rule } from '../models/Rule';
 import { authenticateToken } from '../middleware/auth';
 import { Parser } from 'json2csv';
 import { parse } from 'csv-parse';
+
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
 
 const router = express.Router();
 
@@ -10,10 +14,10 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Get all rules for current user
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
-    const rules = await Rule.find({ userId: (req.user as any)._id }).sort('number');
+    const rules = await Rule.find({ userId: (req.user as any)._id }).sort({ createdAt: -1 });
     res.json(rules);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching rules' });
@@ -21,14 +25,25 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new rule for current user
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   
   console.log('Received request to create rule with body:', req.body);
 
   try {
-    const { number, name, description, active } = req.body;
-    const newRule = new Rule({ userId: (req.user as any)._id, number, name, description, active });
+    const { name, description, active } = req.body;
+    
+    // Auto-generate the next rule number
+    const existingRules = await Rule.find({ userId: (req.user as any)._id }).sort({ number: -1 }).limit(1);
+    const nextNumber = existingRules.length > 0 ? existingRules[0].number + 1 : 1;
+    
+    const newRule = new Rule({ 
+      userId: (req.user as any)._id, 
+      number: nextNumber, 
+      name, 
+      description, 
+      active 
+    });
     await newRule.save();
     console.log('Rule saved successfully:', newRule);
     res.status(201).json(newRule);
@@ -44,7 +59,7 @@ router.post('/', async (req, res) => {
 });
 
 // New endpoint to export rules as CSV
-router.get('/export-csv', async (req, res) => {
+router.get('/export-csv', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const rules = await Rule.find({ userId: (req.user as any)._id }).sort({ number: 1 });
@@ -61,7 +76,7 @@ router.get('/export-csv', async (req, res) => {
 });
 
 // New endpoint to upload rules from CSV
-router.post('/upload-csv', async (req, res) => {
+router.post('/upload-csv', async (req: AuthenticatedRequest, res: Response) => {
     if (!req.user) return res.status(401).send('Unauthorized');
     const userId = (req.user as any)._id;
 
@@ -117,14 +132,23 @@ router.post('/upload-csv', async (req, res) => {
 });
 
 // Update a rule for current user
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const { id } = req.params;
-    const { number, name, description, active } = req.body;
+    const { name, description, active, createdAt } = req.body;
+    
+    // Prepare update data
+    const updateData: any = { name, description, active };
+    
+    // Only allow GODMODE user (krishnan.paddy@gmail.com) to modify createDate
+    if (createdAt && req.user.email === 'krishnan.paddy@gmail.com' && req.user.isAdmin) {
+      updateData.createDate = new Date(createdAt);
+    }
+    
     const updatedRule = await Rule.findOneAndUpdate(
       { _id: id, userId: (req.user as any)._id },
-      { number, name, description, active },
+      updateData,
       { new: true }
     );
     if (!updatedRule) {
@@ -137,7 +161,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete a rule for current user
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).send('Unauthorized');
   try {
     const { id } = req.params;
